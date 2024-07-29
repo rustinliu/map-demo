@@ -1,5 +1,46 @@
 <template>
-  <Navbar> <div>1</div> </Navbar>
+  <Navbar>
+    <el-dropdown @command="handleAdd">
+      添加
+      <template #dropdown>
+        <el-dropdown-menu>
+          <el-dropdown-item command="A">点</el-dropdown-item>
+          <el-dropdown-item command="B">线</el-dropdown-item>
+          <el-dropdown-item command="C">面</el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
+    <el-dropdown @command="handleMod">
+      修改
+      <template #dropdown>
+        <el-dropdown-menu>
+          <el-dropdown-item command="A">点</el-dropdown-item>
+          <el-dropdown-item command="B">线</el-dropdown-item>
+          <el-dropdown-item command="C">面</el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
+    <el-dropdown @command="handleDel">
+      删除
+      <template #dropdown>
+        <el-dropdown-menu>
+          <el-dropdown-item command="A">点</el-dropdown-item>
+          <el-dropdown-item command="B">线</el-dropdown-item>
+          <el-dropdown-item command="C">面</el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
+    <el-dropdown @command="handleDraw">
+      鼠标绘制
+      <template #dropdown>
+        <el-dropdown-menu>
+          <el-dropdown-item command="A">点</el-dropdown-item>
+          <el-dropdown-item command="B">线</el-dropdown-item>
+          <el-dropdown-item command="C">面</el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
+  </Navbar>
   <div id="mapboxContainer" class="map-container"></div>
 </template>
 
@@ -8,18 +49,204 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import Navbar from '@/components/navbar.vue'
 import '/node_modules/mapbox-gl/dist/mapbox-gl.css'
 
-import { initMap, removeMap, CreateMap } from '@/map/mapbox'
+import { CreateMap } from '@/map/mapbox'
 
 let map = null
 onMounted(() => {
-  // initMap('mapboxContainer')
   map = new CreateMap('mapboxContainer', { center: [0, 0], zoom: 0 })
   map.flyTo()
 })
 onUnmounted(() => {
-  // removeMap()
   map.removeMap()
 })
+
+const handleAdd = (type) => {
+  switch (type) {
+    case 'A':
+      map.addGeojsonToMap(
+        'points',
+        {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'Point',
+                coordinates: [-91.3952, -0.9145]
+              }
+            },
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'Point',
+                coordinates: [-90.3295, -0.6344]
+              }
+            },
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'Point',
+                coordinates: [-91.3403, 0.0164]
+              }
+            }
+          ]
+        },
+        {
+          type: 'circle',
+          paint: {
+            'circle-color': '#4264fb',
+            'circle-radius': 8,
+            'circle-stroke-width': 1,
+            'circle-stroke-color': '#ffffff'
+          }
+        }
+      )
+      break
+    case 'B':
+      map.addGeojsonToMap(
+        'line',
+        {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'LineString',
+                coordinates: [
+                  [-91.3952, -0.9145],
+                  [-90.3295, -0.6344],
+                  [-91.3403, 0.0164]
+                ]
+              }
+            }
+          ]
+        },
+        {
+          type: 'line',
+          paint: {
+            'line-color': 'red',
+            'line-width': 14
+          },
+          layout: {
+            'line-cap': 'round',
+            'line-join': 'round'
+          }
+        }
+      )
+      break
+    case 'C':
+      map.addGeojsonToMap(
+        'polygon',
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [-91.3952, -0.9145],
+                [-90.3295, -0.6344],
+                [-91.3403, 0.0164],
+                [-91.3952, -0.9145]
+              ]
+            ]
+          }
+        },
+        {
+          type: 'fill',
+          layout: {},
+          paint: {
+            'fill-color': '#0080ff',
+            'fill-opacity': 0.5
+          }
+        }
+      )
+      break
+  }
+  map.flyTo({ center: [-90.3295, -0.6344], zoom: 7 })
+}
+const handleMod = (type) => {
+  switch (type) {
+    case 'A':
+      map.modGeojsonInMap('points', {
+        data: {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'Point',
+                coordinates: [-91.3952, -0.9145]
+              }
+            },
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'Point',
+                coordinates: [-91.3295, -0.6344]
+              }
+            }
+          ]
+        }
+      })
+      break
+    case 'B':
+      map.modGeojsonInMap(
+        'line',
+        {},
+        {
+          paint: {
+            'line-color': 'green'
+          },
+          layout: {}
+        }
+      )
+      break
+    case 'C':
+      map.modGeojsonInMap(
+        'polygon',
+        {},
+        {
+          paint: {},
+          layout: {
+            visibility: 'none'
+          }
+        }
+      )
+      break
+  }
+}
+const handleDel = (type) => {
+  switch (type) {
+    case 'A':
+      map.delGeojsonInMap('points')
+      break
+    case 'B':
+      map.delGeojsonInMap('line')
+      break
+    case 'C':
+      map.delGeojsonInMap('polygon')
+      break
+  }
+}
+const handleDraw = (type) => {
+  switch (type) {
+    case 'A':
+      map.drawfigures('circle', 'drawCircle')
+      break
+    case 'B':
+      map.drawfigures('line', 'drawLine')
+      break
+    case 'C':
+      map.drawfigures('polygon', 'drawPolygon')
+      break
+  }
+}
 </script>
 
 <style lang="scss" scoped>

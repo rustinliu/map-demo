@@ -52,7 +52,7 @@ async function handleMapChange() {
   border-radius: 25px;
   box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.12);
   > :nth-child(n + 2) {
-    margin-left: 20px;
+    margin-left: 10px;
   }
 }
 </style>

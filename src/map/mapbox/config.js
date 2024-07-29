@@ -7,8 +7,10 @@ const defaultInitOption = {
   zoom: 9,
   attributionControl: false
 }
+
 const defaultFlyOptions = {
   center: [114.059453, 22.553224],
   zoom: 9
 }
+
 export { deafaultAccessToken, defaultInitOption, defaultFlyOptions }
