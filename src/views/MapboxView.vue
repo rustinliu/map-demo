@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import Navbar from '@/components/navbar.vue'
 import '/node_modules/mapbox-gl/dist/mapbox-gl.css'
 
@@ -168,6 +168,7 @@ const handleAdd = (type) => {
   }
   map.flyTo({ center: [-90.3295, -0.6344], zoom: 7 })
 }
+
 const handleMod = (type) => {
   switch (type) {
     case 'A':
@@ -221,6 +222,7 @@ const handleMod = (type) => {
       break
   }
 }
+
 const handleDel = (type) => {
   switch (type) {
     case 'A':
@@ -234,6 +236,7 @@ const handleDel = (type) => {
       break
   }
 }
+
 const handleDraw = (type) => {
   switch (type) {
     case 'A':

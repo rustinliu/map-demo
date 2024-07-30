@@ -174,18 +174,8 @@ class CreateMap {
         if (type === 'polygon') {
           pointList.push([e.lngLat.lng, e.lngLat.lat])
           if (pointList.length > 2) {
-            var points = turf.featureCollection(pointList.map((item) => turf.point(item)))
-
-            var Polygon = turf.convex(points)
-            console.log(Polygon)
-            // const Polygon = {
-            //   type: 'Feature',
-            //   properties: {},
-            //   geometry: {
-            //     type: 'Polygon',
-            //     coordinates: hull
-            //   }
-            // }
+            const points = turf.featureCollection(pointList.map((item) => turf.point(item)))
+            const Polygon = turf.convex(points)
             geojson.features[pointer] = Polygon
             this.instance.getSource(id).setData(geojson)
           }
