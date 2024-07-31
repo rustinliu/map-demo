@@ -1,7 +1,9 @@
 <template>
   <Navbar>
     <el-dropdown @command="handleAdd">
-      添加
+      <el-button type="primary">
+        添加
+      </el-button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="A">点</el-dropdown-item>
@@ -11,7 +13,9 @@
       </template>
     </el-dropdown>
     <el-dropdown @command="handleMod">
-      修改
+      <el-button type="primary">
+        修改
+      </el-button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="A">点</el-dropdown-item>
@@ -21,7 +25,9 @@
       </template>
     </el-dropdown>
     <el-dropdown @command="handleDel">
-      删除
+      <el-button type="primary">
+        删除
+      </el-button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="A">点</el-dropdown-item>
@@ -31,7 +37,9 @@
       </template>
     </el-dropdown>
     <el-dropdown @command="handleDraw">
-      鼠标绘制
+      <el-button type="primary">
+        鼠标绘制
+      </el-button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="A">点</el-dropdown-item>

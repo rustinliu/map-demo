@@ -25,15 +25,13 @@ const defaultInitOption = {
   shouldAnimate: true, // 开启动画
   clock: new Cesium.Clock(), // 用于控制当前时间的时钟对象
   imageryProvider: undefined, // 不添加默认影像图层
-  selectedImageryProviderViewModel: undefined, // 当前图像图层的显示模型，仅baseLayerPicker设为true有意义
-  imageryProviderViewModels: Cesium.createDefaultImageryProviderViewModels(), // 可供BaseLayerPicker选择的图像图层ProviderViewModel数组
   // terrain: Cesium.Terrain.fromWorldTerrain({
   //   requestWaterMask: true,
   //   requestVertexNormals: true
   // }),
   selectedTerrainProviderViewModel: undefined, // 当前地形图层的显示模型，仅baseLayerPicker设为true有意义
   terrainProviderViewModels: Cesium.createDefaultTerrainProviderViewModels(), // 可供BaseLayerPicker选择的地形图层ProviderViewModel数组
-  terrainProvider: new Cesium.EllipsoidTerrainProvider(), // 地形图层提供者，仅baseLayerPicker设为false有意义
+  terrainProvider:  new Cesium.EllipsoidTerrainProvider(), // 地形图层提供者，仅baseLayerPicker设为false有意义
   fullscreenElement: document.body, // 全屏时渲染的HTML元素,
   useDefaultRenderLoop: true, // 如果需要控制渲染循环，则设为true
   targetFrameRate: undefined, // 使用默认render loop时的帧率
