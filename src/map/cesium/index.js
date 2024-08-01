@@ -1,4 +1,5 @@
 import * as Cesium from 'cesium'
+import * as turf from '@turf/turf'
 
 import { deafaultAccessToken, defaultInitOption } from './config'
 
@@ -94,7 +95,91 @@ class CreateMap {
   }
 
   delGeojsonInMap(id) {
-    
+    if (!this.dataSourcesMap.geoJSON || !this.dataSourcesMap.geoJSON[id]) {
+      return console.log('未创建或已删除该ID')
+    }
+    this.instance.dataSources.remove(this.dataSourcesMap.geoJSON[id])
+    delete this.dataSourcesMap.geoJSON[id]
+  }
+
+  delAlljsonInMap() {
+    if (!this.dataSourcesMap.geoJSON) {
+      return console.log('目前未添加geoJSON')
+    }
+    this.instance.dataSources.removeAll()
+    this.dataSourcesMap.geoJSON = null
+  }
+
+  drawfigures(id, type, options) {
+    this.instance._container.style.cursor = 'crosshair'
+    const handler = new Cesium.ScreenSpaceEventHandler(this.instance.scene.canvas)
+    let geojson = {
+      type: 'FeatureCollection',
+      features: []
+    }
+    const pointList = []
+    let drawDataSource = this.dataSourcesMap.geoJSON && this.dataSourcesMap.geoJSON[id]
+    if (!drawDataSource) {
+      this.dataSourcesMap.geoJSON = this.dataSourcesMap.geoJSON || {}
+      this.instance.dataSources.add(Cesium.GeoJsonDataSource.load(geojson, options)).then((dataSource) => {
+        this.dataSourcesMap.geoJSON[id] = dataSource
+        drawDataSource = dataSource
+      })
+    }
+    const confirmPath = (event) => {
+      // 获取鼠标点击位置的三维坐标
+      const cartesian = this.instance.camera.pickEllipsoid(event.position, this.instance.scene.globe.ellipsoid)
+      if (cartesian) {
+        // 将三维坐标转换为经纬度
+        const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
+        const longitude = Cesium.Math.toDegrees(cartographic.longitude)
+        const latitude = Cesium.Math.toDegrees(cartographic.latitude)
+        if(type === 'point') {
+          const point = {
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [longitude, latitude]
+            }
+          }
+          geojson.features.push(point)
+          drawDataSource.load(geojson, options)
+        }
+        if(type === 'line') {
+          pointList.push([longitude, latitude])
+          if (pointList.length > 1) {
+            const LineString = {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'LineString',
+                coordinates: pointList
+              }
+            }
+            geojson.features[0] = LineString
+            drawDataSource.load(geojson, options)
+          }
+        }
+        if (type === 'polygon') {
+          pointList.push([longitude, latitude])
+          if (pointList.length > 2) {
+            const points = turf.featureCollection(pointList.map((item) => turf.point(item)))
+            const Polygon = turf.convex(points)
+            geojson.features[0] = Polygon
+            drawDataSource.load(geojson, options)
+          }
+        }
+      }
+    }
+
+    const stopDraw = () => {
+      this.instance._container.style.cursor = 'pointer'
+
+      handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
+      handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
+    }
+    handler.setInputAction(confirmPath, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+    handler.setInputAction(stopDraw, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
   }
 }
 

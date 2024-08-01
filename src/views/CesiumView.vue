@@ -261,7 +261,32 @@ const handleDel = function (type) {
   }
 }
 
-const handleDraw = function () {}
+const handleDraw = function (type) {
+  switch (type) {
+    case 'A':
+      map.drawfigures('drawPoint', 'point', {
+        // 点属性，另有 markerSymbol markerColor
+        markerColor: Cesium.Color.DARKSALMON
+      })
+      break
+    case 'B':
+      map.drawfigures('drawLine', 'line', {
+        // 线属性
+        strokeWidth: 10,
+        stroke: Cesium.Color.HOTPINK,
+        clampToGround: true
+      })
+      break
+    case 'C':
+      map.drawfigures('drawPolygon', 'polygon', {
+        // 面属性
+        fill: Cesium.Color.DARKMAGENTA.withAlpha(0.5),
+        stroke: Cesium.Color.TRANSPARENT,
+        clampToGround: true
+      })
+      break
+  }
+}
 
 //     //自定义图层
 //     const esri = new Cesium.ArcGisMapServerImageryProvider({

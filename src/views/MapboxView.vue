@@ -1,9 +1,7 @@
 <template>
   <Navbar>
     <el-dropdown @command="handleAdd">
-      <el-button type="primary">
-        添加
-      </el-button>
+      <el-button type="primary"> 添加 </el-button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="A">点</el-dropdown-item>
@@ -13,9 +11,7 @@
       </template>
     </el-dropdown>
     <el-dropdown @command="handleMod">
-      <el-button type="primary">
-        修改
-      </el-button>
+      <el-button type="primary"> 修改 </el-button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="A">点</el-dropdown-item>
@@ -25,9 +21,7 @@
       </template>
     </el-dropdown>
     <el-dropdown @command="handleDel">
-      <el-button type="primary">
-        删除
-      </el-button>
+      <el-button type="primary"> 删除 </el-button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="A">点</el-dropdown-item>
@@ -37,9 +31,7 @@
       </template>
     </el-dropdown>
     <el-dropdown @command="handleDraw">
-      <el-button type="primary">
-        鼠标绘制
-      </el-button>
+      <el-button type="primary"> 鼠标绘制 </el-button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item command="A">点</el-dropdown-item>
@@ -248,13 +240,34 @@ const handleDel = (type) => {
 const handleDraw = (type) => {
   switch (type) {
     case 'A':
-      map.drawfigures('circle', 'drawCircle')
+      map.drawfigures('drawCircle', 'circle', {
+        paint: {
+          'circle-color': '#4264fb',
+          'circle-radius': 8,
+          'circle-stroke-width': 1,
+          'circle-stroke-color': '#ffffff'
+        }
+      })
       break
     case 'B':
-      map.drawfigures('line', 'drawLine')
+      map.drawfigures('drawLine', 'line', {
+        paint: {
+          'line-color': 'red',
+          'line-width': 14
+        },
+        layout: {
+          'line-cap': 'round',
+          'line-join': 'round'
+        }
+      })
       break
     case 'C':
-      map.drawfigures('polygon', 'drawPolygon')
+      map.drawfigures('drawPolygon', 'polygon', {
+        paint: {
+          'fill-color': '#0080ff',
+          'fill-opacity': 0.5
+        }
+      })
       break
   }
 }

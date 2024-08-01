@@ -1,3 +1,11 @@
+/*
+ * @Author: LiuJiangHao jianghao.liu@topevery.com
+ * @Date: 2024-07-29 09:17:01
+ * @LastEditors: LiuJiangHao jianghao.liu@topevery.com
+ * @LastEditTime: 2024-08-01 15:22:59
+ * @FilePath: \map-demo\src\map\mapbox\index.js
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 import mapboxgl from 'mapbox-gl'
 import * as turf from '@turf/turf'
 
@@ -82,7 +90,7 @@ class CreateMap {
     delete this.sourceLayerMap.geoJSON[id]
     console.log('已删除')
   }
-  drawfigures(type, id) {
+  drawfigures(id, type, { paint = {}, layout= {} }) {
     this.instance.getCanvas().style.cursor = 'crosshair'
     let isAdd = true
     let geojson = {
@@ -102,36 +110,24 @@ class CreateMap {
           id,
           type,
           source: id,
-          paint: {
-            'circle-color': '#4264fb',
-            'circle-radius': 8,
-            'circle-stroke-width': 1,
-            'circle-stroke-color': '#ffffff'
-          }
+          paint,
+          layout
         })
       } else if (type === 'line') {
         this.instance.addLayer({
           id,
           type,
           source: id,
-          paint: {
-            'line-color': 'red',
-            'line-width': 14
-          },
-          layout: {
-            'line-cap': 'round',
-            'line-join': 'round'
-          }
+          paint,
+          layout
         })
       } else if (type === 'polygon') {
         this.instance.addLayer({
           id,
           type: 'fill',
           source: id,
-          paint: {
-            'fill-color': '#0080ff',
-            'fill-opacity': 0.5
-          }
+          paint,
+          layout
         })
       }
     } else {
