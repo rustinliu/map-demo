@@ -55,6 +55,8 @@ class CreateMap {
 
     // 存datasource
     this.dataSourcesMap = {}
+    // handle
+    this.handler = new Cesium.ScreenSpaceEventHandler(this.instance.scene.canvas)
   }
 
   removeMap() {
@@ -111,8 +113,9 @@ class CreateMap {
   }
 
   drawfigures(id, type, options) {
+    this.handler.getInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK) && this.handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
+    this.handler.getInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK) && this.handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     this.instance._container.style.cursor = 'crosshair'
-    const handler = new Cesium.ScreenSpaceEventHandler(this.instance.scene.canvas)
     let geojson = {
       type: 'FeatureCollection',
       features: []
@@ -134,7 +137,7 @@ class CreateMap {
         const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
         const longitude = Cesium.Math.toDegrees(cartographic.longitude)
         const latitude = Cesium.Math.toDegrees(cartographic.latitude)
-        if(type === 'point') {
+        if (type === 'point') {
           const point = {
             type: 'Feature',
             geometry: {
@@ -145,7 +148,7 @@ class CreateMap {
           geojson.features.push(point)
           drawDataSource.load(geojson, options)
         }
-        if(type === 'line') {
+        if (type === 'line') {
           pointList.push([longitude, latitude])
           if (pointList.length > 1) {
             const LineString = {
@@ -175,11 +178,11 @@ class CreateMap {
     const stopDraw = () => {
       this.instance._container.style.cursor = 'pointer'
 
-      handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
-      handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
+      this.handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
+      this.handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     }
-    handler.setInputAction(confirmPath, Cesium.ScreenSpaceEventType.LEFT_CLICK)
-    handler.setInputAction(stopDraw, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+    this.handler.setInputAction(confirmPath, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+    this.handler.setInputAction(stopDraw, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
   }
 }
 

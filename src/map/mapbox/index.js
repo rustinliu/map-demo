@@ -1,11 +1,3 @@
-/*
- * @Author: LiuJiangHao jianghao.liu@topevery.com
- * @Date: 2024-07-29 09:17:01
- * @LastEditors: LiuJiangHao jianghao.liu@topevery.com
- * @LastEditTime: 2024-08-01 15:22:59
- * @FilePath: \map-demo\src\map\mapbox\index.js
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
 import mapboxgl from 'mapbox-gl'
 import * as turf from '@turf/turf'
 
@@ -23,6 +15,8 @@ class CreateMap {
     this.instance._logoControl && this.instance.removeControl(this.instance._logoControl)
     // 存储soureId与对应的LayerId source ：[layer]
     this.sourceLayerMap = {}
+    // 存储事件及回调名称 eventType: callBackName
+    this.eventHandleMap = {}
   }
   removeMap() {
     this.instance.remove()
@@ -90,9 +84,12 @@ class CreateMap {
     delete this.sourceLayerMap.geoJSON[id]
     console.log('已删除')
   }
-  drawfigures(id, type, { paint = {}, layout= {} }) {
+  drawfigures(id, type, { paint = {}, layout = {} }) {
+    this.eventHandleMap.click && this.instance.off('click', this.eventHandleMap.click)
+    this.eventHandleMap.contextmenu && this.instance.off('click', this.eventHandleMap.contextmenu)
+    this.eventHandleMap.mousemove && this.instance.off('mousemove', this.eventHandleMap.mousemove)
+    this.eventHandleMap.mousemove = null
     this.instance.getCanvas().style.cursor = 'crosshair'
-    let isAdd = true
     let geojson = {
       type: 'FeatureCollection',
       features: []
@@ -134,50 +131,109 @@ class CreateMap {
       geojson = source._data
       pointer = source._data.features.length
     }
-    this.instance.on('contextmenu', (e) => {
-      isAdd = false
-      pointList = []
-      this.instance.getCanvas().style.cursor = 'pointer'
-    })
-    this.instance.on('click', (e) => {
-      if (isAdd) {
-        if (type === 'circle') {
-          const point = {
-            type: 'Feature',
-            geometry: {
-              type: 'Point',
-              coordinates: [e.lngLat.lng, e.lngLat.lat]
-            }
-          }
-          geojson.features.push(point)
-          this.instance.getSource(id).setData(geojson)
-        }
-        if (type === 'line') {
-          pointList.push([e.lngLat.lng, e.lngLat.lat])
-          if (pointList.length > 1) {
-            const LineString = {
+    // 处理绘制线段
+    if (type === 'line') {
+      const drawDottedLine = (e) => {
+        if (!pointList.length) return
+        const lastPoint = pointList[pointList.length - 1]
+        const dataJSON = {
+          type: 'FeatureCollection',
+          features: [
+            {
               type: 'Feature',
               properties: {},
               geometry: {
                 type: 'LineString',
-                coordinates: pointList
+                coordinates: [lastPoint, [e.lngLat.lng, e.lngLat.lat]]
               }
             }
-            geojson.features[pointer] = LineString
-            this.instance.getSource(id).setData(geojson)
-          }
+          ]
         }
-        if (type === 'polygon') {
-          pointList.push([e.lngLat.lng, e.lngLat.lat])
-          if (pointList.length > 2) {
-            const points = turf.featureCollection(pointList.map((item) => turf.point(item)))
-            const Polygon = turf.convex(points)
-            geojson.features[pointer] = Polygon
-            this.instance.getSource(id).setData(geojson)
-          }
+        const source = this.instance.getSource('drawDottedLine')
+        if (!source) {
+          this.instance.addSource('drawDottedLine', {
+            type: 'geojson',
+            data: dataJSON
+          })
+          this.instance.addLayer({
+            id: 'drawDottedLine',
+            type: 'line',
+            source: 'drawDottedLine',
+            paint: {
+              //   'line-dasharray': [4, 2],
+              'line-color': 'black',
+              'line-width': 5,
+              'line-dasharray': [2, 4]
+            }
+          })
+          this.sourceLayerMap.geoJSON = this.sourceLayerMap.geoJSON || {}
+          this.sourceLayerMap.geoJSON['drawDottedLine'] = ['drawDottedLine']
+        } else {
+          this.modGeojsonInMap('drawDottedLine', { data: dataJSON })
         }
       }
-    })
+      this.instance.on('mousemove', drawDottedLine)
+      this.eventHandleMap.mousemove = drawDottedLine
+    }
+    const confirmPath = (e) => {
+      if (type === 'circle') {
+        const point = {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [e.lngLat.lng, e.lngLat.lat]
+          }
+        }
+        geojson.features.push(point)
+        this.instance.getSource(id).setData(geojson)
+      }
+      if (type === 'line') {
+        pointList.push([e.lngLat.lng, e.lngLat.lat])
+        if (pointList.length > 1) {
+          this.delGeojsonInMap('drawDottedLine')
+          const LineString = {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: pointList
+            }
+          }
+          geojson.features[pointer] = LineString
+          this.instance.getSource(id).setData(geojson)
+        }
+      }
+      if (type === 'polygon') {
+        pointList.push([e.lngLat.lng, e.lngLat.lat])
+        if (pointList.length > 2) {
+          const points = turf.featureCollection(pointList.map((item) => turf.point(item)))
+          const Polygon = turf.convex(points)
+          geojson.features[pointer] = Polygon
+          this.instance.getSource(id).setData(geojson)
+        }
+      }
+    }
+    const stopDraw = (e) => {
+      pointList = []
+      this.instance.getCanvas().style.cursor = 'pointer'
+
+      this.instance.off('contextmenu', stopDraw)
+      this.instance.off('click', confirmPath)
+
+      this.eventHandleMap.click = null
+      this.eventHandleMap.contextmenu = null
+      if (this.eventHandleMap.mousemove) {
+        this.instance.off('mousemove', this.eventHandleMap.drawDottedLine)
+        this.eventHandleMap.drawDottedLine = null
+        this.delGeojsonInMap('drawDottedLine')
+      }
+    }
+
+    this.instance.on('contextmenu', stopDraw)
+    this.instance.on('click', confirmPath)
+
+    this.eventHandleMap.click = confirmPath
+    this.eventHandleMap.contextmenu = stopDraw
   }
 }
 export { CreateMap }
