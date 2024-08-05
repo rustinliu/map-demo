@@ -45,12 +45,11 @@
 </template>
 
 <script setup>
-import Navbar from '@/components/navbar.vue'
-
 import { onMounted, onUnmounted } from 'vue'
-import { CreateMap } from '@/map/cesium'
-
+import Navbar from '@/components/navbar.vue'
 import * as Cesium from 'cesium'
+
+import  CreateMap  from '@/map/cesium'
 
 let map = null
 

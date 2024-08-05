@@ -249,4 +249,4 @@ class CreateMap {
   }
 }
 
-export { CreateMap }
+export default CreateMap

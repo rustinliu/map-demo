@@ -4,7 +4,12 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/mapbox'
+      redirect: '/map'
+    },
+    {
+      path: '/map',
+      name: 'map',
+      component: () => import('../views/MapView.vue')
     },
     {
       path: '/mapbox',

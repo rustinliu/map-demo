@@ -214,7 +214,7 @@ class CreateMap {
         }
       }
     }
-    const stopDraw = (e) => {
+    const stopDraw = () => {
       pointList = []
       this.instance.getCanvas().style.cursor = 'pointer'
 
@@ -237,4 +237,6 @@ class CreateMap {
     this.eventHandleMap.contextmenu = stopDraw
   }
 }
-export { CreateMap }
+
+export default CreateMap
+

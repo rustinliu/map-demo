@@ -49,7 +49,7 @@ import { onMounted, onUnmounted } from 'vue'
 import Navbar from '@/components/navbar.vue'
 import '/node_modules/mapbox-gl/dist/mapbox-gl.css'
 
-import { CreateMap } from '@/map/mapbox'
+import  CreateMap  from '@/map/mapbox'
 
 let map = null
 onMounted(() => {
