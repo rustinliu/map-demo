@@ -37,7 +37,7 @@ class CreateMap {
     // 开启地形深度检测:
     // 控制在渲染场景时，相机是否进行深度测试以避免将被遮挡的物体绘制在前景
     // true: 相机会根据地形高度信息进行深度测试，避免将低于地面的物体绘制在地面之上
-    this.instance.scene.globe.depthTestAgainstTerrain = true
+    this.instance.scene.globe.depthTestAgainstTerrain = false
 
     // !自定义光源
     // viewer.scene.light = new Cesium.DirectionalLight({
@@ -115,6 +115,8 @@ class CreateMap {
   drawfigures(id, type, options) {
     this.handler.getInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK) && this.handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler.getInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK) && this.handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+    this.handler.getInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE) && this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+    this.delGeojsonInMap('drawDottedLine')
     this.instance._container.style.cursor = 'crosshair'
     let geojson = {
       type: 'FeatureCollection',
@@ -128,6 +130,60 @@ class CreateMap {
         this.dataSourcesMap.geoJSON[id] = dataSource
         drawDataSource = dataSource
       })
+    }
+    // 处理绘制线段
+    if (type === 'line') {
+      const drawDottedLine = async (event) => {
+        // 获取鼠标点击位置的三维坐标
+        const cartesian = this.instance.camera.pickEllipsoid(event.endPosition, this.instance.scene.globe.ellipsoid)
+        if (cartesian) {
+          const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
+          const longitude = Cesium.Math.toDegrees(cartographic.longitude)
+          const latitude = Cesium.Math.toDegrees(cartographic.latitude)
+          if (!pointList.length) return
+          const lastPoint = pointList[pointList.length - 1]
+          const dotDataJSON = {
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                  type: 'LineString',
+                  coordinates: [lastPoint, [longitude, latitude]]
+                }
+              }
+            ]
+          }
+          const options = {
+            // // 线属性
+            strokeWidth: 5,
+            clampToGround: true
+          }
+          let dotDataSource = this.dataSourcesMap.geoJSON && this.dataSourcesMap.geoJSON['dotDataSource']
+          if (!dotDataSource) {
+            this.dataSourcesMap.geoJSON = this.dataSourcesMap.geoJSON || {}
+            await this.instance.dataSources.add(Cesium.GeoJsonDataSource.load(dotDataJSON, options)).then((dataSource) => {
+              this.dataSourcesMap.geoJSON['dotDataSource'] = dataSource
+              dotDataSource = dataSource
+            })
+          }
+          await dotDataSource.load(dotDataJSON, options)
+          // 为 GeoJSON 线设置虚线材质
+          const polylineDashMaterial = new Cesium.PolylineDashMaterialProperty({
+            color: Cesium.Color.BLACK, // 线的颜色
+            dashLength: 15, // 虚线的长度
+            gapLength: 15 // 虚线之间的间隔
+          })
+          // 遍历所有的实体，并设置虚线材质
+          dotDataSource.entities.values.forEach(function (entity) {
+            if (entity.polyline) {
+              entity.polyline.material = polylineDashMaterial
+            }
+          })
+        }
+      }
+      this.handler.setInputAction(drawDottedLine, Cesium.ScreenSpaceEventType.MOUSE_MOVE)
     }
     const confirmPath = (event) => {
       // 获取鼠标点击位置的三维坐标
@@ -146,7 +202,7 @@ class CreateMap {
             }
           }
           geojson.features.push(point)
-          drawDataSource.load(geojson, options)
+          drawDataSource.process(geojson, options)
         }
         if (type === 'line') {
           pointList.push([longitude, latitude])
@@ -160,7 +216,9 @@ class CreateMap {
               }
             }
             geojson.features[0] = LineString
-            drawDataSource.load(geojson, options)
+            drawDataSource.process(geojson, options)
+            // 点选位置后删除虚线
+            this.delGeojsonInMap('dotDataSource')
           }
         }
         if (type === 'polygon') {
@@ -180,7 +238,12 @@ class CreateMap {
 
       this.handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
       this.handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+      if (type === 'line') {
+        this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+        this.delGeojsonInMap('dotDataSource')
+      }
     }
+
     this.handler.setInputAction(confirmPath, Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler.setInputAction(stopDraw, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
   }

@@ -89,6 +89,7 @@ class CreateMap {
     this.eventHandleMap.contextmenu && this.instance.off('click', this.eventHandleMap.contextmenu)
     this.eventHandleMap.mousemove && this.instance.off('mousemove', this.eventHandleMap.mousemove)
     this.eventHandleMap.mousemove = null
+    this.delGeojsonInMap('drawDottedLine')
     this.instance.getCanvas().style.cursor = 'crosshair'
     let geojson = {
       type: 'FeatureCollection',
