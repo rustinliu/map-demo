@@ -15,30 +15,43 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, defineProps } from 'vue'
 import { useRouter } from 'vue-router'
+const props = defineProps({
+  routerMode: {
+    type: Boolean,
+    default: true
+  }
+})
+const emit = defineEmits(['changeMap'])
 
 const router = useRouter()
-let mapTypeValue = JSON.parse(sessionStorage.getItem('mapTypeValue'))
-if (!mapTypeValue) {
-  sessionStorage.setItem('mapTypeValue', false)
-  mapTypeValue = false
+let mapTypeValue = false
+if (props.RouterMode) {
+  mapTypeValue = JSON.parse(sessionStorage.getItem('mapTypeValue'))
+  if (!mapTypeValue) {
+    sessionStorage.setItem('mapTypeValue', false)
+    mapTypeValue = false
+  }
 }
 const mapType = ref(mapTypeValue)
 const switchLoading = ref(false)
 
 async function handleMapChange() {
-  switchLoading.value = true
-  setTimeout(() => {
-    sessionStorage.setItem('mapTypeValue', mapType.value)
-    router.push(mapType.value ? '/cesium' : '/mapbox')
-  }, 500)
+  if (props.RouterMode) {
+    switchLoading.value = true
+    setTimeout(() => {
+      sessionStorage.setItem('mapTypeValue', mapType.value)
+      router.push(mapType.value ? '/cesium' : '/mapbox')
+    }, 500)
+  }
+  emit('changeMap')
 }
 </script>
 
 <style lang="scss" scoped>
 .navbarWrapper {
-  z-index: 1;
+  z-index: 2;
   backdrop-filter: blur(5px);
   position: absolute;
   top: 0;
