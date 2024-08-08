@@ -173,7 +173,6 @@ const handleMod = (type) => {
   switch (type) {
     case 'A':
       map.modGeojsonInMap('points', {
-        data: {
           type: 'FeatureCollection',
           features: [
             {
@@ -193,8 +192,7 @@ const handleMod = (type) => {
               }
             }
           ]
-        }
-      })
+        })
       break
     case 'B':
       map.modGeojsonInMap(
@@ -240,7 +238,7 @@ const handleDel = (type) => {
 const handleDraw = (type) => {
   switch (type) {
     case 'A':
-      map.drawfigures('drawCircle', 'circle', {
+      map.drawfigures('drawPoint', 'point', {
         paint: {
           'circle-color': '#4264fb',
           'circle-radius': 8,

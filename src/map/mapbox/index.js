@@ -38,24 +38,24 @@ class CreateMap {
       layerOption.id = id
       this.sourceLayerMap.geoJSON[id].push(layerOption.id)
       this.instance.addLayer(layerOption)
-    }
+    } 
     return this
   }
-  modGeojsonInMap(id, sourceOption, layerOption) {
+  modGeojsonInMap(id, geoJSON = {}, options = {}) {
     if (!this.sourceLayerMap.geoJSON || !this.sourceLayerMap.geoJSON[id]) {
       return console.log('未创建该ID')
     }
-    if (sourceOption && sourceOption.data) {
-      const { isUpdate, data } = sourceOption
+    if (geoJSON && (JSON.stringify(geoJSON) !== '{}')) {
+      const { isUpdate } = options
       const source = this.instance.getSource(id)
       if (!isUpdate) {
-        source.setData(data)
+        source.setData(geoJSON)
       } else {
-        source.updateData(data)
+        source.updateData(geoJSON)
       }
     }
-    if (layerOption) {
-      const { paint, layout } = layerOption
+    if (options) {
+      const { paint, layout } = options
       if (paint) {
         const paintOptionsList = Object.keys(paint)
         if (paintOptionsList.length) {
@@ -103,10 +103,10 @@ class CreateMap {
         type: 'geojson',
         data: geojson
       })
-      if (type === 'circle') {
+      if (type === 'point') {
         this.instance.addLayer({
           id,
-          type,
+          type:'circle',
           source: id,
           paint,
           layout
@@ -170,14 +170,14 @@ class CreateMap {
           this.sourceLayerMap.geoJSON = this.sourceLayerMap.geoJSON || {}
           this.sourceLayerMap.geoJSON['drawDottedLine'] = ['drawDottedLine']
         } else {
-          this.modGeojsonInMap('drawDottedLine', { data: dataJSON })
+          this.modGeojsonInMap('drawDottedLine', dataJSON)
         }
       }
       this.instance.on('mousemove', drawDottedLine)
       this.eventHandleMap.mousemove = drawDottedLine
     }
     const confirmPath = (e) => {
-      if (type === 'circle') {
+      if (type === 'point') {
         const point = {
           type: 'Feature',
           geometry: {
