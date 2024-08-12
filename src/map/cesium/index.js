@@ -72,7 +72,7 @@ class CreateMap {
     })
   }
 
-  addGeojsonToMap(id, geojson, options, isZoom = true) {
+  addGeojsonToMap(id, geojson, options, isZoom = false) {
     this.dataSourcesMap.geoJSON = this.dataSourcesMap.geoJSON || {}
     if (Object.keys(this.dataSourcesMap.geoJSON).includes(id)) {
       return console.log('该ID已存在')

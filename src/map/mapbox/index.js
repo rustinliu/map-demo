@@ -27,6 +27,7 @@ class CreateMap {
     return this
   }
   addGeojsonToMap(id, geoJSON, layerOption) {
+    console.log(id, geoJSON, layerOption,'id, geoJSON, layerOption')
     this.sourceLayerMap.geoJSON = this.sourceLayerMap.geoJSON || {}
     if (Object.keys(this.sourceLayerMap.geoJSON).includes(id)) {
       return console.log('该ID已存在')
