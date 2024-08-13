@@ -104,7 +104,7 @@ class CreateMap {
         type: 'geojson',
         data: geojson
       })
-      if (type === 'point') {
+      if (type === 'Point') {
         this.instance.addLayer({
           id,
           type:'circle',
@@ -112,15 +112,15 @@ class CreateMap {
           paint,
           layout
         })
-      } else if (type === 'line') {
+      } else if (type === 'LineString') {
         this.instance.addLayer({
           id,
-          type,
+          type:'line',
           source: id,
           paint,
           layout
         })
-      } else if (type === 'polygon') {
+      } else if (type === 'Polygon') {
         this.instance.addLayer({
           id,
           type: 'fill',
@@ -134,7 +134,7 @@ class CreateMap {
       pointer = source._data.features.length
     }
     // 处理绘制线段
-    if (type === 'line') {
+    if (type === 'LineString') {
       const drawDottedLine = (e) => {
         if (!pointList.length) return
         const lastPoint = pointList[pointList.length - 1]
@@ -178,7 +178,7 @@ class CreateMap {
       this.eventHandleMap.mousemove = drawDottedLine
     }
     const confirmPath = (e) => {
-      if (type === 'point') {
+      if (type === 'Point') {
         const point = {
           type: 'Feature',
           geometry: {
@@ -189,7 +189,7 @@ class CreateMap {
         geojson.features.push(point)
         this.instance.getSource(id).setData(geojson)
       }
-      if (type === 'line') {
+      if (type === 'LineString') {
         pointList.push([e.lngLat.lng, e.lngLat.lat])
         if (pointList.length > 1) {
           this.delGeojsonInMap('drawDottedLine')
@@ -205,7 +205,7 @@ class CreateMap {
           this.instance.getSource(id).setData(geojson)
         }
       }
-      if (type === 'polygon') {
+      if (type === 'Polygon') {
         pointList.push([e.lngLat.lng, e.lngLat.lat])
         if (pointList.length > 2) {
           const points = turf.featureCollection(pointList.map((item) => turf.point(item)))
@@ -236,6 +236,9 @@ class CreateMap {
 
     this.eventHandleMap.click = confirmPath
     this.eventHandleMap.contextmenu = stopDraw
+  }
+  drawfiguresStart() {
+    this.instance.getCanvas().style.cursor = 'crosshair'
   }
 }
 

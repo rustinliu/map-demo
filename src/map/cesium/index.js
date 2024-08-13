@@ -132,7 +132,7 @@ class CreateMap {
       })
     }
     // 处理绘制线段
-    if (type === 'line') {
+    if (type === 'LineString') {
       const drawDottedLine = async (event) => {
         // 获取鼠标点击位置的三维坐标
         const cartesian = this.instance.camera.pickEllipsoid(event.endPosition, this.instance.scene.globe.ellipsoid)
@@ -193,7 +193,7 @@ class CreateMap {
         const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
         const longitude = Cesium.Math.toDegrees(cartographic.longitude)
         const latitude = Cesium.Math.toDegrees(cartographic.latitude)
-        if (type === 'point') {
+        if (type === 'Point') {
           const point = {
             type: 'Feature',
             geometry: {
@@ -204,7 +204,7 @@ class CreateMap {
           geojson.features.push(point)
           drawDataSource.process(geojson, options)
         }
-        if (type === 'line') {
+        if (type === 'LineString') {
           pointList.push([longitude, latitude])
           if (pointList.length > 1) {
             const LineString = {
@@ -221,7 +221,7 @@ class CreateMap {
             this.delGeojsonInMap('dotDataSource')
           }
         }
-        if (type === 'polygon') {
+        if (type === 'Polygon') {
           pointList.push([longitude, latitude])
           if (pointList.length > 2) {
             const points = turf.featureCollection(pointList.map((item) => turf.point(item)))
@@ -238,7 +238,7 @@ class CreateMap {
 
       this.handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
       this.handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
-      if (type === 'line') {
+      if (type === 'LineString') {
         this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
         this.delGeojsonInMap('dotDataSource')
       }
