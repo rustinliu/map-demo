@@ -45,11 +45,14 @@
 </template>
 
 <script setup>
+// Elmessage样式
+import 'element-plus/es/components/message/style/css'
+import { ref } from 'vue'
+
 import samplePoint from '@/map/data/sample-point.json'
 import sampleLine from '@/map/data/sample-line.json'
 import samplePolygon from '@/map/data/sample-polygon.json'
 
-import { ref } from 'vue'
 import Map from '@/components/map/index.vue'
 import Navbar from '@/components/navbar.vue'
 
@@ -102,8 +105,8 @@ const handleDel = (type) => {
   }
 }
 
-
 const handleDraw = function (type) {
+  ElMessage({type:'success',message:'点击左键确认坐标，点击右键退出绘制，绘制中途可切换地图查看', offset:70})
   switch (type) {
     case 'A':
       mapRef.value.drawGeoJSON('Point')
@@ -115,10 +118,6 @@ const handleDraw = function (type) {
       mapRef.value.drawGeoJSON('Polygon')
       break
   }
-}
-
-const handlDrawEnd = function () {
-  console.log('draw end')
 }
 </script>
 

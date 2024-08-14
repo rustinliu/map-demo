@@ -247,6 +247,91 @@ class CreateMap {
     this.handler.setInputAction(confirmPath, Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler.setInputAction(stopDraw, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
   }
+  drawfigureStart(type, leftClickCallback, rightClickCallback) {
+    this.instance._container.style.cursor = 'crosshair'
+    const confirmPath = (event) => {
+      // 获取鼠标点击位置的三维坐标
+      const cartesian = this.instance.camera.pickEllipsoid(event.position, this.instance.scene.globe.ellipsoid)
+      if (cartesian) {
+        // 将三维坐标转换为经纬度
+        const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
+        const longitude = Cesium.Math.toDegrees(cartographic.longitude)
+        const latitude = Cesium.Math.toDegrees(cartographic.latitude)
+        leftClickCallback([longitude, latitude])
+      }
+    }
+    const stopDraw = () => {
+      this.drawfigureEnd()
+      rightClickCallback()
+    }
+    this.handler.setInputAction(confirmPath, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+    this.handler.setInputAction(stopDraw, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+  }
+  drawfigureEnd() {
+    this.instance._container.style.cursor = 'pointer'
+
+    this.handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
+    this.handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+    if (this.handler.getInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)) {
+      this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+      this?.dataSourcesMap?.geoJSON['dotDataSource'] && this.delGeojsonInMap('dotDataSource')
+    }
+  }
+  drawDashLine(lastPoint) {
+    if (this.handler.getInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)) {
+      this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+      this?.dataSourcesMap?.geoJSON['dotDataSource'] && this.delGeojsonInMap('dotDataSource')
+    }
+    const drawDottedLine = async (event) => {
+      // 获取鼠标点击位置的三维坐标
+      const cartesian = this.instance.camera.pickEllipsoid(event.endPosition, this.instance.scene.globe.ellipsoid)
+      if (cartesian) {
+        const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
+        const longitude = Cesium.Math.toDegrees(cartographic.longitude)
+        const latitude = Cesium.Math.toDegrees(cartographic.latitude)
+        const dotDataJSON = {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'LineString',
+                coordinates: [lastPoint, [longitude, latitude]]
+              }
+            }
+          ]
+        }
+        const options = {
+          // // 线属性
+          strokeWidth: 5,
+          clampToGround: true
+        }
+        let dotDataSource = this.dataSourcesMap.geoJSON && this.dataSourcesMap.geoJSON['dotDataSource']
+        if (!dotDataSource) {
+          this.dataSourcesMap.geoJSON = this.dataSourcesMap.geoJSON || {}
+          await this.instance.dataSources.add(Cesium.GeoJsonDataSource.load(dotDataJSON, options)).then((dataSource) => {
+            this.dataSourcesMap.geoJSON['dotDataSource'] = dataSource
+            dotDataSource = dataSource
+          })
+        }
+        await dotDataSource.load(dotDataJSON, options)
+        // 为 GeoJSON 线设置虚线材质
+        const polylineDashMaterial = new Cesium.PolylineDashMaterialProperty({
+          color: Cesium.Color.BLACK, // 线的颜色
+          dashLength: 15, // 虚线的长度
+          gapLength: 15 // 虚线之间的间隔
+        })
+        // 遍历所有的实体，并设置虚线材质
+        dotDataSource.entities.values.forEach(function (entity) {
+          if (entity.polyline) {
+            entity.polyline.material = polylineDashMaterial
+          }
+        })
+      }
+    }
+    this.handler.setInputAction(drawDottedLine, Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+  }
 }
 
 export default CreateMap

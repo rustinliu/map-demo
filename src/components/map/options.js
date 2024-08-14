@@ -2,17 +2,18 @@ import * as Cesium from 'cesium'
 export const cesiumOptions = {
   Point: {
     // 点属性，另有 markerSymbol markerColor
-    markerColor: Cesium.Color.CRIMSON
+    markerColor: Cesium.Color.HOTPINK,
+    clampToGround: true
   },
   LineString: {
     // 线属性
-    strokeWidth: 2,
+    strokeWidth: 4,
     stroke: Cesium.Color.HOTPINK,
     clampToGround: true
   },
   Polygon: {
     // 面属性
-    fill: Cesium.Color.PINK.withAlpha(0.5),
+    fill: Cesium.Color.HOTPINK.withAlpha(0.5),
     stroke: Cesium.Color.TRANSPARENT,
     clampToGround: true
   }
@@ -30,8 +31,8 @@ export const mapboxOptions = {
   LineString: {
     type: 'line',
     paint: {
-      'line-color': 'red',
-      'line-width': 14
+      'line-color': '#5362f9',
+      'line-width': 4
     },
     layout: {
       'line-cap': 'round',
@@ -42,7 +43,7 @@ export const mapboxOptions = {
     type: 'fill',
     layout: {},
     paint: {
-      'fill-color': '#0080ff',
+      'fill-color': '#5362f9',
       'fill-opacity': 0.5
     }
   }

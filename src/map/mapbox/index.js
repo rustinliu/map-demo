@@ -27,7 +27,7 @@ class CreateMap {
     return this
   }
   addGeojsonToMap(id, geoJSON, layerOption) {
-    console.log(id, geoJSON, layerOption,'id, geoJSON, layerOption')
+    console.log(id, geoJSON, layerOption, 'id, geoJSON, layerOption')
     this.sourceLayerMap.geoJSON = this.sourceLayerMap.geoJSON || {}
     if (Object.keys(this.sourceLayerMap.geoJSON).includes(id)) {
       return console.log('该ID已存在')
@@ -39,14 +39,14 @@ class CreateMap {
       layerOption.id = id
       this.sourceLayerMap.geoJSON[id].push(layerOption.id)
       this.instance.addLayer(layerOption)
-    } 
+    }
     return this
   }
   modGeojsonInMap(id, geoJSON = {}, options = {}) {
     if (!this.sourceLayerMap.geoJSON || !this.sourceLayerMap.geoJSON[id]) {
       return console.log('未创建该ID')
     }
-    if (geoJSON && (JSON.stringify(geoJSON) !== '{}')) {
+    if (geoJSON && JSON.stringify(geoJSON) !== '{}') {
       const { isUpdate } = options
       const source = this.instance.getSource(id)
       if (!isUpdate) {
@@ -107,7 +107,7 @@ class CreateMap {
       if (type === 'Point') {
         this.instance.addLayer({
           id,
-          type:'circle',
+          type: 'circle',
           source: id,
           paint,
           layout
@@ -115,7 +115,7 @@ class CreateMap {
       } else if (type === 'LineString') {
         this.instance.addLayer({
           id,
-          type:'line',
+          type: 'line',
           source: id,
           paint,
           layout
@@ -237,10 +237,73 @@ class CreateMap {
     this.eventHandleMap.click = confirmPath
     this.eventHandleMap.contextmenu = stopDraw
   }
-  drawfiguresStart() {
+  drawfigureStart(type, leftClickCallback, rightClickCallback) {
     this.instance.getCanvas().style.cursor = 'crosshair'
+    this.drawDottedLine = this.confirmPath = (e) => {
+      leftClickCallback([e.lngLat.lng, e.lngLat.lat])
+    }
+    this.stopDraw = () => {
+      this.drawfigureEnd()
+      rightClickCallback()
+    }
+    this.instance.on('click', this.confirmPath)
+    this.instance.on('contextmenu', this.stopDraw)
+  }
+  drawfigureEnd() {
+    this.instance.getCanvas().style.cursor = 'pointer'
+
+    this.instance.off('contextmenu', this.stopDraw)
+    this.instance.off('click', this.confirmPath)
+    if (this.drawDottedLine) {
+      this?.sourceLayerMap?.geoJSON['drawDottedLine'] && this.delGeojsonInMap('drawDottedLine')
+      this.instance.off('mousemove', this.drawDottedLine)
+      this.drawDottedLine = null
+    }
+  }
+  drawDashLine(point) {
+    if (this.drawDottedLine) {
+      this.sourceLayerMap.geoJSON['drawDottedLine'] && this.delGeojsonInMap('drawDottedLine')
+      this?.instance?.off('mousemove', this.drawDottedLine)
+    }
+    this.drawDottedLine = (e) => {
+      const dataJSON = {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: [point, [e.lngLat.lng, e.lngLat.lat]]
+            }
+          }
+        ]
+      }
+      const source = this.instance.getSource('drawDottedLine')
+      if (!source) {
+        this.instance.addSource('drawDottedLine', {
+          type: 'geojson',
+          data: dataJSON
+        })
+        this.instance.addLayer({
+          id: 'drawDottedLine',
+          type: 'line',
+          source: 'drawDottedLine',
+          paint: {
+            //   'line-dasharray': [4, 2],
+            'line-color': 'black',
+            'line-width': 3,
+            'line-dasharray': [2, 4]
+          }
+        })
+        this.sourceLayerMap.geoJSON = this.sourceLayerMap.geoJSON || {}
+        this.sourceLayerMap.geoJSON['drawDottedLine'] = ['drawDottedLine']
+      } else {
+        this.modGeojsonInMap('drawDottedLine', dataJSON)
+      }
+    }
+    this.instance.on('mousemove', this.drawDottedLine)
   }
 }
 
 export default CreateMap
-

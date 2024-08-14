@@ -25,20 +25,31 @@ onUnmounted(() => {
 // watchEffect(() => {
 //   mapboxMap && (mapboxMap.instance.getContainer().style.display = props.visible ? 'block' : 'none')
 // })
+const emit = defineEmits(['leftClick', 'rightClick'])
 
 const addGeojsonToMap = (id, geojson, options) => mapboxMap.addGeojsonToMap(id, geojson, options)
 const modGeojsonInMap = (id, geojson, options) => mapboxMap.modGeojsonInMap(id, geojson, options)
 const delGeojsonInMap = (id) => mapboxMap.delGeojsonInMap(id)
 const drawfigures = (id, type, options) => mapboxMap.drawfigures(id, type, options)
+const drawfigureStart = (type) =>
+  mapboxMap.drawfigureStart(
+    type,
+    (geojson) => emit('leftClick', geojson),
+    () => emit('rightClick')
+  )
+const drawfigureEnd = () => mapboxMap.drawfigureEnd()
+const drawDashLine = (point) => mapboxMap.drawDashLine(point)
 
 defineExpose({
   instance: toRef(() => mapboxMap.instance),
   addGeojsonToMap,
   modGeojsonInMap,
   delGeojsonInMap,
-  drawfigures
+  drawfigures,
+  drawfigureStart,
+  drawfigureEnd,
+  drawDashLine
 })
-
 </script>
 
 <style lang="scss" scoped>

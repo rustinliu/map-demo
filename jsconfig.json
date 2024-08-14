@@ -4,5 +4,8 @@
       "@/*": ["./src/*"]
     }
   },
+  "include": [
+		"Element-puls.d.ts"
+	],
   "exclude": ["node_modules", "dist"]
 }

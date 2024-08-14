@@ -27,18 +27,30 @@ onUnmounted(() => {
 //   cesiumMap && (cesiumMap.instance.container.style.display = props.visible ? 'block' : 'none')
 //   props.visible && cesiumMap && cesiumMap.instance.resize()
 // })
+const emit = defineEmits(['leftClick', 'rightClick'])
 
 const addGeojsonToMap = (id, geojson, options, isZoom) => cesiumMap.addGeojsonToMap(id, geojson, options, isZoom)
 const modGeojsonInMap = (id, geojson, options, isReload) => cesiumMap.modGeojsonInMap(id, geojson, options, isReload)
 const delGeojsonInMap = (id) => cesiumMap.delGeojsonInMap(id)
 const drawfigures = (id, type, options) => cesiumMap.drawfigures(id, type, options)
+const drawfigureStart = (type) =>
+  cesiumMap.drawfigureStart(
+    type,
+    (geojson) => emit('leftClick', geojson),
+    () => emit('rightClick')
+  )
+const drawfigureEnd = () => cesiumMap.drawfigureEnd()
+const drawDashLine = (point) => cesiumMap.drawDashLine(point)
 
 defineExpose({
   instance: toRef(() => cesiumMap.instance),
   addGeojsonToMap,
   modGeojsonInMap,
   delGeojsonInMap,
-  drawfigures
+  drawfigures,
+  drawfigureStart,
+  drawfigureEnd,
+  drawDashLine
 })
 </script>
 
