@@ -239,7 +239,7 @@ class CreateMap {
   }
   drawfigureStart(type, leftClickCallback, rightClickCallback) {
     this.instance.getCanvas().style.cursor = 'crosshair'
-    this.drawDottedLine = this.confirmPath = (e) => {
+    this.confirmPath = (e) => {
       leftClickCallback([e.lngLat.lng, e.lngLat.lat])
     }
     this.stopDraw = () => {
@@ -258,6 +258,11 @@ class CreateMap {
       this?.sourceLayerMap?.geoJSON['drawDottedLine'] && this.delGeojsonInMap('drawDottedLine')
       this.instance.off('mousemove', this.drawDottedLine)
       this.drawDottedLine = null
+    }
+    if(this.drawDotedPolygon) {
+      this?.sourceLayerMap?.geoJSON['drawDotedPolygon'] && this.delGeojsonInMap('drawDotedPolygon')
+      this.instance.off('mousemove', this.drawDotedPolygon)
+      this.drawDotedPolygon = null
     }
   }
   drawDashLine(point) {
@@ -297,12 +302,53 @@ class CreateMap {
           }
         })
         this.sourceLayerMap.geoJSON = this.sourceLayerMap.geoJSON || {}
-        this.sourceLayerMap.geoJSON['drawDottedLine'] = ['drawDottedLine']
+        this.sourceLayerMap.geoJSON['drawDottedLine'] = dataJSON
       } else {
         this.modGeojsonInMap('drawDottedLine', dataJSON)
       }
     }
     this.instance.on('mousemove', this.drawDottedLine)
+  }
+  drawDashPolygon(pointlist) {
+    if(pointlist.length < 2) return
+    if (this.drawDotedPolygon) {
+      this.sourceLayerMap.geoJSON['drawDotedPolygon'] && this.delGeojsonInMap('drawDotedPolygon')
+      this?.instance?.off('mousemove', this.drawDotedPolygon)
+    }
+    this.drawDotedPolygon = (e) => {
+      const dotList = [...pointlist, [e.lngLat.lng, e.lngLat.lat]]
+      const points = turf.featureCollection(dotList.map((item) => turf.point(item)))
+      const Polygon = turf.convex(points)
+      const dataJSON = {
+        type: 'FeatureCollection',
+        features: [
+          Polygon
+        ]
+      }
+      const source = this.instance.getSource('drawDotedPolygon')
+      if (!source) {
+        this.instance.addSource('drawDotedPolygon', {
+          type: 'geojson',
+          data: dataJSON
+        })
+        this.instance.addLayer({
+          id: 'drawDotedPolygon',
+          type: 'line',
+          source: 'drawDotedPolygon',
+          paint: {
+            //   'line-dasharray': [4, 2],
+            'line-color': 'black',
+            'line-width': 3,
+            'line-dasharray': [2, 4]
+          }
+        })
+        this.sourceLayerMap.geoJSON = this.sourceLayerMap.geoJSON || {}
+        this.sourceLayerMap.geoJSON['drawDotedPolygon'] = dataJSON
+      } else {
+        this.modGeojsonInMap('drawDotedPolygon', dataJSON)
+      }
+    }
+    this.instance.on('mousemove', this.drawDotedPolygon)
   }
 }
 

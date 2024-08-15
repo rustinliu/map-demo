@@ -39,6 +39,7 @@ const drawfigureStart = (type) =>
   )
 const drawfigureEnd = () => mapboxMap.drawfigureEnd()
 const drawDashLine = (point) => mapboxMap.drawDashLine(point)
+const drawDashPolygon = (pointList) => mapboxMap.drawDashPolygon(pointList)
 
 defineExpose({
   instance: toRef(() => mapboxMap.instance),
@@ -48,7 +49,8 @@ defineExpose({
   drawfigures,
   drawfigureStart,
   drawfigureEnd,
-  drawDashLine
+  drawDashLine,
+  drawDashPolygon
 })
 </script>
 

@@ -16,7 +16,7 @@ import { mapboxOptions, cesiumOptions } from './options.js'
 
 const mapboxRef = ref(null)
 const cesiumRef = ref(null)
-const geojsonIdList = {}
+const geojsonIdMap = {}
 
 const props = defineProps({
   currMap: {
@@ -39,6 +39,7 @@ const props = defineProps({
     }
   }
 })
+const emit = defineEmits(['drawEnd'])
 
 watch(
   // 位置方向变化切换时同步地图
@@ -57,14 +58,14 @@ const addGeoJSON = (geoJSON, id, options = {}) => {
   let type = geoJSON.features.length && geoJSON.features[0].geometry.type
 
   let createId = id || type
-  if (Object.keys(geojsonIdList).includes(createId)) return console.error('id已存在，无法新增')
+  if (Object.keys(geojsonIdMap).includes(createId)) return console.error('id已存在，无法新增')
   if (geoJSON.features && geoJSON.features.length > 1) {
     const index = geoJSON.features.findIndex((item) => item.geometry.type !== type)
     if (index !== -1) return console.error('geoJSON内数据的type不一致, 请检查')
   }
   mapboxRef.value.addGeojsonToMap(createId, geoJSON, options?.mapbox || props.defaultGeoOptions.mapbox[type])
   cesiumRef.value.addGeojsonToMap(createId, geoJSON, options?.cesium || props.defaultGeoOptions.cesium[type])
-  geojsonIdList[createId] = geoJSON
+  geojsonIdMap[createId] = geoJSON
   if (!createId) return type
 }
 
@@ -72,62 +73,68 @@ const updateGeoJSON = (geoJSON, id, options = {}) => {
   let type = geoJSON.features.length && geoJSON.features[0].geometry.type
 
   let updateId = id || type
-  if (!Object.keys(geojsonIdList).includes(updateId)) return console.error('id不存在，无法修改')
+  if (!Object.keys(geojsonIdMap).includes(updateId)) return console.error('id不存在，无法修改')
   if (geoJSON.features && geoJSON.features.length > 1) {
     const index = geoJSON.features.findIndex((item) => item.geometry.type !== type)
     if (index !== -1) return console.error('geoJSON内数据的type不一致, 请检查')
   }
   mapboxRef.value.modGeojsonInMap(updateId, geoJSON, options?.mapbox || props.defaultGeoOptions.mapbox[type])
   cesiumRef.value.modGeojsonInMap(updateId, geoJSON, options?.cesium || props.defaultGeoOptions.cesium[type])
-  geoJSON && (geojsonIdList[updateId] = geoJSON)
+  geoJSON && (geojsonIdMap[updateId] = geoJSON)
   if (!updateId) return type
 }
 
 const removeGeoJSON = (id) => {
-  if (!Object.keys(geojsonIdList).includes(id)) return console.error('id不存在，无法删除')
+  if (!Object.keys(geojsonIdMap).includes(id)) return console.error('id不存在，无法删除')
   mapboxRef.value.delGeojsonInMap(id)
   cesiumRef.value.delGeojsonInMap(id)
-  delete geojsonIdList[id]
+  delete geojsonIdMap[id]
 }
 
-let isDraw = false
-let drawId = ''
-let drawType = ''
-let drawJSON = null
-let drawOption = null
-let drawPostion = ''
-let drawTemList = []
+let drawParams = {
+  isDraw: false,
+  drawId: '',
+  drawType: '',
+  drawJSON: null,
+  drawOption: null,
+  drawPostion: null,
+  drawTemList: []
+}
 const drawGeoJSON = (type, id, options = {}) => {
-  if (isDraw) handleRightClick(true)
+  if (drawParams.isDraw) handleRightClick(true)
   if (!['Point', 'LineString', 'Polygon'].includes(type)) return console.error('type错误')
-  drawId = id || 'draw' + type
-  drawType = type
-  drawOption = {}
-  drawOption.mapbox = options.mapbox ? options.mapbox : props.defaultGeoOptions.mapbox[type]
-  drawOption.cesium = options.cesium ? options.cesium : props.defaultGeoOptions.cesium[type]
-  if (geojsonIdList[drawId]) {
-    drawJSON = geojsonIdList[drawId]
-    drawPostion = drawJSON.features.length
+  drawParams.drawId = id || 'draw' + type
+  drawParams.drawType = type
+  drawParams.drawOption = {}
+  drawParams.drawOption.mapbox = options.mapbox ? options.mapbox : props.defaultGeoOptions.mapbox[type]
+  drawParams.drawOption.cesium = options.cesium ? options.cesium : props.defaultGeoOptions.cesium[type]
+  if (geojsonIdMap[drawParams.drawId]) {
+    drawParams.drawJSON = geojsonIdMap[drawParams.drawId]
+    drawParams.drawPostion = drawParams.drawJSON.features.length
   } else {
-    drawJSON = {
+    drawParams.drawJSON = {
       type: 'FeatureCollection',
       features: []
     }
-    drawPostion = 0
-    addGeoJSON(drawJSON, drawId, drawOption)
+    drawParams.drawPostion = 0
+    addGeoJSON(drawParams.drawJSON, drawParams.drawId, drawParams.drawOption)
   }
 
-  drawTemList = []
+  drawParams.drawTemList = []
   mapboxRef.value.drawfigureStart(type)
   cesiumRef.value.drawfigureStart(type)
-  isDraw = true
+  drawParams.isDraw = true
 }
-const drawDashline = (latestPoint) => {
+const drawDashLine = (latestPoint) => {
   cesiumRef.value.drawDashLine(latestPoint)
   mapboxRef.value.drawDashLine(latestPoint)
 }
+const drawDashPolygon = (points) => {
+  cesiumRef.value.drawDashPolygon(points)
+  mapboxRef.value.drawDashPolygon(points)
+}
 const handleleftClick = (geopoint) => {
-  if (drawType === 'Point') {
+  if (drawParams.drawType === 'Point') {
     const Point = {
       type: 'Feature',
       geometry: {
@@ -135,52 +142,57 @@ const handleleftClick = (geopoint) => {
         coordinates: geopoint
       }
     }
-    drawJSON.features.push(Point)
+    drawParams.drawJSON.features.push(Point)
   }
-  if (drawType === 'LineString') {
-    drawTemList.push(geopoint)
-    drawDashline(geopoint)
-    if (drawTemList.length > 1) {
+  if (drawParams.drawType === 'LineString') {
+    drawParams.drawTemList.push(geopoint)
+    drawDashLine(geopoint)
+    if (drawParams.drawTemList.length > 1) {
       const LineString = {
         type: 'Feature',
         properties: {},
         geometry: {
           type: 'LineString',
-          coordinates: drawTemList
+          coordinates: drawParams.drawTemList
         }
       }
-      drawJSON.features[drawPostion] = LineString
+      drawParams.drawJSON.features[drawParams.drawPostion] = LineString
     }
   }
-  if (drawType === 'Polygon') {
-    drawTemList.push(geopoint)
-    if (drawTemList.length > 2) {
-      const points = turf.featureCollection(drawTemList.map((item) => turf.point(item)))
+  if (drawParams.drawType === 'Polygon') {
+    drawParams.drawTemList.push(geopoint)
+    drawDashPolygon(drawParams.drawTemList)
+    if (drawParams.drawTemList.length > 2) {
+      const points = turf.featureCollection(drawParams.drawTemList.map((item) => turf.point(item)))
       const Polygon = turf.convex(points)
-      drawJSON.features[drawPostion] = Polygon
+      drawParams.drawJSON.features[drawParams.drawPostion] = Polygon
     }
   }
-  updateGeoJSON(drawJSON, drawId, drawOption)
+  updateGeoJSON(drawParams.drawJSON, drawParams.drawId, drawParams.drawOption)
 }
 
 const handleRightClick = (endAll) => {
-  drawId = ''
-  drawType = ''
-  drawJSON = null
-  drawOption = null
-  drawPostion = ''
-  drawTemList = []
-  if (props.currMap === 'mapbox' && !endAll) cesiumRef.value.drawfigureEnd()
-  if (props.currMap === 'cesium' && !endAll) mapboxRef.value.drawfigureEnd()
+  emit('drawEnd', drawParams.drawJSON)
+  drawParams = {
+    isDraw: false,
+    drawId: '',
+    drawType: '',
+    drawJSON: null,
+    drawOption: null,
+    drawPostion: null,
+    drawTemList: []
+  }
   if (endAll) {
     cesiumRef.value.drawfigureEnd()
     mapboxRef.value.drawfigureEnd()
+    return
   }
-  isDraw = false
+  props.currMap === 'mapbox' && cesiumRef.value.drawfigureEnd()
+  props.currMap === 'cesium' && mapboxRef.value.drawfigureEnd()
 }
 
 defineExpose({
-  geojsonIdList: toRef(() => geojsonIdList),
+  geojsonIdMap: toRef(() => geojsonIdMap),
   addGeoJSON,
   updateGeoJSON,
   removeGeoJSON,

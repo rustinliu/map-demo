@@ -106,7 +106,7 @@ const handleDel = (type) => {
 }
 
 const handleDraw = function (type) {
-  ElMessage({type:'success',message:'点击左键确认坐标，点击右键退出绘制，绘制中途可切换地图查看', offset:70})
+  ElMessage({ type: 'success', message: '点击左键确认坐标，点击右键退出绘制，绘制中途可切换地图查看', offset: 70, showClose: true, duration: 2000 })
   switch (type) {
     case 'A':
       mapRef.value.drawGeoJSON('Point')
@@ -118,6 +118,10 @@ const handleDraw = function (type) {
       mapRef.value.drawGeoJSON('Polygon')
       break
   }
+}
+
+const handlDrawEnd = function (drawJSON) {
+  console.log('geoJSON',drawJSON)
 }
 </script>
 

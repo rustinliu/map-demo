@@ -242,6 +242,10 @@ class CreateMap {
         this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
         this.delGeojsonInMap('dotDataSource')
       }
+      if(type === 'Polygon') {
+        this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+        this.delGeojsonInMap('polygonDataSource')
+      }
     }
 
     this.handler.setInputAction(confirmPath, Cesium.ScreenSpaceEventType.LEFT_CLICK)
@@ -275,6 +279,7 @@ class CreateMap {
     if (this.handler.getInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)) {
       this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
       this?.dataSourcesMap?.geoJSON['dotDataSource'] && this.delGeojsonInMap('dotDataSource')
+      this?.dataSourcesMap?.geoJSON['polygonDataSource'] && this.delGeojsonInMap('polygonDataSource')
     }
   }
   drawDashLine(lastPoint) {
@@ -331,6 +336,60 @@ class CreateMap {
       }
     }
     this.handler.setInputAction(drawDottedLine, Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+  }
+  drawDashPolygon(pointlist) {
+    if(pointlist.length < 2) return
+    if (this.handler.getInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)) {
+      this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+      this?.dataSourcesMap?.geoJSON['polygonDataSource'] && this.delGeojsonInMap('polygonDataSource')
+    }
+    const drawDottedPolygon = async (event) => {
+      // 获取鼠标点击位置的三维坐标
+      const cartesian = this.instance.camera.pickEllipsoid(event.endPosition, this.instance.scene.globe.ellipsoid)
+      if (cartesian) {
+        const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
+        const longitude = Cesium.Math.toDegrees(cartographic.longitude)
+        const latitude = Cesium.Math.toDegrees(cartographic.latitude)
+        const dotList = [...pointlist, [longitude, latitude]]
+        const points = turf.featureCollection(dotList.map((item) => turf.point(item)))
+        const Polygon = turf.convex(points)
+        const polygonJSON = {
+          type: 'FeatureCollection',
+          features: [ Polygon ]
+        }
+        const options = {
+          fill: Cesium.Color.TRANSPARENT,
+          stroke: Cesium.Color.TRANSPARENT, 
+        }
+        let polygonDataSource = this.dataSourcesMap.geoJSON && this.dataSourcesMap.geoJSON['polygonDataSource']
+        if (!polygonDataSource) {
+          this.dataSourcesMap.geoJSON = this.dataSourcesMap.geoJSON || {}
+          await this.instance.dataSources.add(Cesium.GeoJsonDataSource.load(polygonJSON, options)).then((dataSource) => {
+            this.dataSourcesMap.geoJSON['polygonDataSource'] = dataSource
+            polygonDataSource = dataSource
+          })
+        }
+        await polygonDataSource.load(polygonJSON, options)
+        // 为 GeoJSON 线设置虚线材质
+        const polylineDashMaterial = new Cesium.PolylineDashMaterialProperty({
+          color: Cesium.Color.BLACK, // 线的颜色
+          dashLength: 15, // 虚线的长度
+          gapLength: 15 // 虚线之间的间隔
+        })
+        // 遍历所有的实体，并设置虚线材质
+        polygonDataSource.entities.values.forEach(function (entity) {
+          var positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
+            // 设置面轮廓
+            entity.polyline = new Cesium.PolylineGraphics({
+              positions,
+              width: 3,
+              material: polylineDashMaterial,
+              clampToGround: true	// 贴地
+          })
+        })
+      }
+    }
+    this.handler.setInputAction(drawDottedPolygon, Cesium.ScreenSpaceEventType.MOUSE_MOVE)
   }
 }
 
