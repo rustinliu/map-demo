@@ -338,7 +338,7 @@ class CreateMap {
     this.handler.setInputAction(drawDottedLine, Cesium.ScreenSpaceEventType.MOUSE_MOVE)
   }
   drawDashPolygon(pointlist) {
-    if(pointlist.length < 2) return
+    if(pointlist.length < 1) return
     if (this.handler.getInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)) {
       this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
       this?.dataSourcesMap?.geoJSON['polygonDataSource'] && this.delGeojsonInMap('polygonDataSource')
@@ -350,12 +350,29 @@ class CreateMap {
         const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
         const longitude = Cesium.Math.toDegrees(cartographic.longitude)
         const latitude = Cesium.Math.toDegrees(cartographic.latitude)
-        const dotList = [...pointlist, [longitude, latitude]]
-        const points = turf.featureCollection(dotList.map((item) => turf.point(item)))
-        const Polygon = turf.convex(points)
-        const polygonJSON = {
-          type: 'FeatureCollection',
-          features: [ Polygon ]
+        let polygonJSON
+        if(pointlist.length === 1) {
+          polygonJSON = {
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                  type: 'LineString',
+                  coordinates: [pointlist[0], [longitude, latitude]]
+                }
+              }
+            ]
+          }
+        } else {
+          const dotList = [...pointlist, [longitude, latitude]]
+          const points = turf.featureCollection(dotList.map((item) => turf.point(item)))
+          const Polygon = turf.convex(points)
+          polygonJSON = {
+            type: 'FeatureCollection',
+            features: [ Polygon ]
+          }
         }
         const options = {
           fill: Cesium.Color.TRANSPARENT,
@@ -378,7 +395,10 @@ class CreateMap {
         })
         // 遍历所有的实体，并设置虚线材质
         polygonDataSource.entities.values.forEach(function (entity) {
-          var positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
+          if(pointlist.length === 1) {
+            entity.polyline && (entity.polyline.material = polylineDashMaterial)
+          } else {
+            let positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
             // 设置面轮廓
             entity.polyline = new Cesium.PolylineGraphics({
               positions,
@@ -386,6 +406,7 @@ class CreateMap {
               material: polylineDashMaterial,
               clampToGround: true	// 贴地
           })
+          }
         })
       }
     }

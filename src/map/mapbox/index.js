@@ -310,20 +310,37 @@ class CreateMap {
     this.instance.on('mousemove', this.drawDottedLine)
   }
   drawDashPolygon(pointlist) {
-    if(pointlist.length < 2) return
+    if(pointlist.length < 1) return
     if (this.drawDotedPolygon) {
       this.sourceLayerMap.geoJSON['drawDotedPolygon'] && this.delGeojsonInMap('drawDotedPolygon')
       this?.instance?.off('mousemove', this.drawDotedPolygon)
     }
     this.drawDotedPolygon = (e) => {
-      const dotList = [...pointlist, [e.lngLat.lng, e.lngLat.lat]]
-      const points = turf.featureCollection(dotList.map((item) => turf.point(item)))
-      const Polygon = turf.convex(points)
-      const dataJSON = {
-        type: 'FeatureCollection',
-        features: [
-          Polygon
-        ]
+      let dataJSON
+      if (pointlist.length === 1) {
+        dataJSON = {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'LineString',
+                coordinates: [pointlist[0], [e.lngLat.lng, e.lngLat.lat]]
+              }
+            }
+          ]
+        }
+      } else {
+        const dotList = [...pointlist, [e.lngLat.lng, e.lngLat.lat]]
+        const points = turf.featureCollection(dotList.map((item) => turf.point(item)))
+        const Polygon = turf.convex(points)
+        dataJSON = {
+          type: 'FeatureCollection',
+          features: [
+            Polygon
+          ]
+        }
       }
       const source = this.instance.getSource('drawDotedPolygon')
       if (!source) {
