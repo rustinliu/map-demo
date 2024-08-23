@@ -25,7 +25,7 @@ onUnmounted(() => {
 // watchEffect(() => {
 //   mapboxMap && (mapboxMap.instance.getContainer().style.display = props.visible ? 'block' : 'none')
 // })
-const emit = defineEmits(['leftClick', 'rightClick'])
+const emit = defineEmits(['StartDraw', 'EndDraw', 'PickGeoJSON'])
 
 const addGeojsonToMap = (id, geojson, options) => mapboxMap.addGeojsonToMap(id, geojson, options)
 const modGeojsonInMap = (id, geojson, options) => mapboxMap.modGeojsonInMap(id, geojson, options)
@@ -34,12 +34,14 @@ const drawfigures = (id, type, options) => mapboxMap.drawfigures(id, type, optio
 const drawfigureStart = (type) =>
   mapboxMap.drawfigureStart(
     type,
-    (geojson) => emit('leftClick', geojson),
-    () => emit('rightClick')
+    (geojson) => emit('StartDraw', geojson),
+    () => emit('EndDraw')
   )
 const drawfigureEnd = () => mapboxMap.drawfigureEnd()
 const drawDashLine = (point) => mapboxMap.drawDashLine(point)
 const drawDashPolygon = (pointList) => mapboxMap.drawDashPolygon(pointList)
+
+const pickGeoJSON = () => mapboxMap.pickGeoJSON((data) => emit('PickGeoJSON', data))
 
 defineExpose({
   instance: toRef(() => mapboxMap.instance),
@@ -50,7 +52,8 @@ defineExpose({
   drawfigureStart,
   drawfigureEnd,
   drawDashLine,
-  drawDashPolygon
+  drawDashPolygon,
+  pickGeoJSON
 })
 </script>
 

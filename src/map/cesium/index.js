@@ -78,6 +78,14 @@ class CreateMap {
       return console.log('该ID已存在')
     }
     this.instance.dataSources.add(Cesium.GeoJsonDataSource.load(geojson, options)).then((dataSource) => {
+      // dataSource.entities.values.forEach(value => {
+      //   value.billboard = undefined;
+      //   value.point = {
+      //     pixelSize: 10,
+      //     color: Cesium.Color.RED,
+      //     show: true
+      //   }
+      // })
       this.dataSourcesMap.geoJSON[id] = dataSource
       isZoom && this.instance.zoomTo(dataSource)
     })
@@ -234,7 +242,7 @@ class CreateMap {
     }
 
     const stopDraw = () => {
-      this.instance._container.style.cursor = 'pointer'
+      this.instance._container.style.cursor = 'default'
 
       this.handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
       this.handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
@@ -242,7 +250,7 @@ class CreateMap {
         this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
         this.delGeojsonInMap('dotDataSource')
       }
-      if(type === 'Polygon') {
+      if (type === 'Polygon') {
         this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
         this.delGeojsonInMap('polygonDataSource')
       }
@@ -261,7 +269,7 @@ class CreateMap {
         const cartographic = Cesium.Cartographic.fromCartesian(cartesian)
         const longitude = Cesium.Math.toDegrees(cartographic.longitude)
         const latitude = Cesium.Math.toDegrees(cartographic.latitude)
-        leftClickCallback([longitude, latitude])
+        leftClickCallback([Number(longitude.toFixed(3).slice(0, -1)), Number(latitude.toFixed(3).slice(0, -1))])
       }
     }
     const stopDraw = () => {
@@ -272,7 +280,7 @@ class CreateMap {
     this.handler.setInputAction(stopDraw, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
   }
   drawfigureEnd() {
-    this.instance._container.style.cursor = 'pointer'
+    this.instance._container.style.cursor = 'default'
 
     this.handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
@@ -338,7 +346,7 @@ class CreateMap {
     this.handler.setInputAction(drawDottedLine, Cesium.ScreenSpaceEventType.MOUSE_MOVE)
   }
   drawDashPolygon(pointlist) {
-    if(pointlist.length < 1) return
+    if (pointlist.length < 1) return
     if (this.handler.getInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)) {
       this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
       this?.dataSourcesMap?.geoJSON['polygonDataSource'] && this.delGeojsonInMap('polygonDataSource')
@@ -351,7 +359,7 @@ class CreateMap {
         const longitude = Cesium.Math.toDegrees(cartographic.longitude)
         const latitude = Cesium.Math.toDegrees(cartographic.latitude)
         let polygonJSON
-        if(pointlist.length === 1) {
+        if (pointlist.length === 1) {
           polygonJSON = {
             type: 'FeatureCollection',
             features: [
@@ -371,12 +379,12 @@ class CreateMap {
           const Polygon = turf.convex(points)
           polygonJSON = {
             type: 'FeatureCollection',
-            features: [ Polygon ]
+            features: [Polygon]
           }
         }
         const options = {
           fill: Cesium.Color.TRANSPARENT,
-          stroke: Cesium.Color.TRANSPARENT, 
+          stroke: Cesium.Color.TRANSPARENT
         }
         let polygonDataSource = this.dataSourcesMap.geoJSON && this.dataSourcesMap.geoJSON['polygonDataSource']
         if (!polygonDataSource) {
@@ -395,22 +403,44 @@ class CreateMap {
         })
         // 遍历所有的实体，并设置虚线材质
         polygonDataSource.entities.values.forEach(function (entity) {
-          if(pointlist.length === 1) {
+          if (pointlist.length === 1) {
             entity.polyline && (entity.polyline.material = polylineDashMaterial)
           } else {
-            let positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions;
+            let positions = entity.polygon.hierarchy.getValue(Cesium.JulianDate.now()).positions
             // 设置面轮廓
             entity.polyline = new Cesium.PolylineGraphics({
               positions,
               width: 3,
               material: polylineDashMaterial,
-              clampToGround: true	// 贴地
-          })
+              clampToGround: true // 贴地
+            })
           }
         })
       }
     }
     this.handler.setInputAction(drawDottedPolygon, Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+  }
+
+  pickGeoJSON(callBack) {
+    if (this?.dataSourcesMap?.geoJSON) {
+      const pickGeoJsonHandle = (click) => {
+        const pickedObject = this.instance.scene.pick(click.position)
+        // 如果被点击的对象是一个实体，并且这个实体来自你的 GeoJSON 数据源
+        if (Cesium.defined(pickedObject) && pickedObject.id instanceof Cesium.Entity) {
+          const entity = pickedObject.id
+          if (entity.polygon || entity.polyline) {
+            callBack({ index: entity.properties.sortIndex, id: entity.properties.id, type: entity.polygon ? 'Polygon' : 'LineString' })
+            endPickGeoJsonHandle()
+          }
+        }
+      }
+      const endPickGeoJsonHandle = () => {
+        this.handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
+        this.handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+      }
+      this.handler.setInputAction(pickGeoJsonHandle, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+      this.handler.setInputAction(endPickGeoJsonHandle, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+    }
   }
 }
 

@@ -217,7 +217,7 @@ class CreateMap {
     }
     const stopDraw = () => {
       pointList = []
-      this.instance.getCanvas().style.cursor = 'pointer'
+      this.instance.getCanvas().style.cursor = 'default'
 
       this.instance.off('contextmenu', stopDraw)
       this.instance.off('click', confirmPath)
@@ -240,7 +240,7 @@ class CreateMap {
   drawfigureStart(type, leftClickCallback, rightClickCallback) {
     this.instance.getCanvas().style.cursor = 'crosshair'
     this.confirmPath = (e) => {
-      leftClickCallback([e.lngLat.lng, e.lngLat.lat])
+      leftClickCallback([Number(e.lngLat.lng.toFixed(3).slice(0, -1)), Number(e.lngLat.lat.toFixed(3).slice(0, -1))])
     }
     this.stopDraw = () => {
       this.drawfigureEnd()
@@ -250,7 +250,7 @@ class CreateMap {
     this.instance.on('contextmenu', this.stopDraw)
   }
   drawfigureEnd() {
-    this.instance.getCanvas().style.cursor = 'pointer'
+    this.instance.getCanvas().style.cursor = 'default'
 
     this.instance.off('contextmenu', this.stopDraw)
     this.instance.off('click', this.confirmPath)
@@ -259,7 +259,7 @@ class CreateMap {
       this.instance.off('mousemove', this.drawDottedLine)
       this.drawDottedLine = null
     }
-    if(this.drawDotedPolygon) {
+    if (this.drawDotedPolygon) {
       this?.sourceLayerMap?.geoJSON['drawDotedPolygon'] && this.delGeojsonInMap('drawDotedPolygon')
       this.instance.off('mousemove', this.drawDotedPolygon)
       this.drawDotedPolygon = null
@@ -310,7 +310,7 @@ class CreateMap {
     this.instance.on('mousemove', this.drawDottedLine)
   }
   drawDashPolygon(pointlist) {
-    if(pointlist.length < 1) return
+    if (pointlist.length < 1) return
     if (this.drawDotedPolygon) {
       this.sourceLayerMap.geoJSON['drawDotedPolygon'] && this.delGeojsonInMap('drawDotedPolygon')
       this?.instance?.off('mousemove', this.drawDotedPolygon)
@@ -337,9 +337,7 @@ class CreateMap {
         const Polygon = turf.convex(points)
         dataJSON = {
           type: 'FeatureCollection',
-          features: [
-            Polygon
-          ]
+          features: [Polygon]
         }
       }
       const source = this.instance.getSource('drawDotedPolygon')
@@ -366,6 +364,33 @@ class CreateMap {
       }
     }
     this.instance.on('mousemove', this.drawDotedPolygon)
+  }
+
+  pickGeoJSON(callBack) {
+    if (this?.sourceLayerMap?.geoJSON) {
+      const pickGeoJsonHandle = (e) => {
+        const features = this.instance.queryRenderedFeatures(e.point)
+        if (features && features.length) {
+          const id = features[0]?.layer?.id
+          const geoJsonIdList = Object.keys(this?.sourceLayerMap?.geoJSON)
+          if (geoJsonIdList.includes(id) && ['Polygon', 'LineString'].includes(features[0].geometry.type)) {
+            const index = features[0].properties.sortIndex.toString()
+            callBack({
+              index,
+              id,
+              type: features[0]._geometry.type
+            })
+            endPickGeoJsonHandle()
+          }
+        }
+      }
+      const endPickGeoJsonHandle = () => {
+        this.instance.off('click', pickGeoJsonHandle)
+        this.instance.off('contextmenu', endPickGeoJsonHandle)
+      }
+      this.instance.on('click', pickGeoJsonHandle)
+      this.instance.on('contextmenu', endPickGeoJsonHandle)
+    }
   }
 }
 

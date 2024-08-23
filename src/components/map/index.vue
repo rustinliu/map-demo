@@ -1,7 +1,7 @@
 <template>
   <div class="map-wrapper">
-    <MapboxMap ref="mapboxRef" :visible="currMap === 'mapbox'" @leftClick="handleleftClick" @rightClick="handleRightClick" />
-    <CesiumMap ref="cesiumRef" :visible="currMap === 'cesium'" @leftClick="handleleftClick" @rightClick="handleRightClick" />
+    <MapboxMap ref="mapboxRef" :visible="currMap === 'mapbox'" @StartDraw="handleStartDraw" @EndDraw="handleEndDraw" @PickGeoJSON="handlePickGeoJSON" />
+    <CesiumMap ref="cesiumRef" :visible="currMap === 'cesium'" @StartDraw="handleStartDraw" @EndDraw="handleEndDraw" @PickGeoJSON="handlePickGeoJSON" />
   </div>
 </template>
 <script setup>
@@ -39,7 +39,7 @@ const props = defineProps({
     }
   }
 })
-const emit = defineEmits(['drawEnd'])
+const emit = defineEmits(['drawEnd', 'pickedData'])
 
 watch(
   // 位置方向变化切换时同步地图
@@ -56,8 +56,13 @@ watch(
 
 const addGeoJSON = (geoJSON, id, options = {}) => {
   let type = geoJSON.features.length && geoJSON.features[0].geometry.type
-
   let createId = id || type
+  if (geoJSON && geoJSON.features && geoJSON.features.length) {
+    geoJSON.features.forEach((item, index) => {
+      item.properties.sortIndex = index
+      item.properties.id = createId
+    })
+  }
   if (Object.keys(geojsonIdMap).includes(createId)) return console.error('id已存在，无法新增')
   if (geoJSON.features && geoJSON.features.length > 1) {
     const index = geoJSON.features.findIndex((item) => item.geometry.type !== type)
@@ -71,8 +76,13 @@ const addGeoJSON = (geoJSON, id, options = {}) => {
 
 const updateGeoJSON = (geoJSON, id, options = {}) => {
   let type = geoJSON.features.length && geoJSON.features[0].geometry.type
-
   let updateId = id || type
+  if (geoJSON && geoJSON.features && geoJSON.features.length) {
+    geoJSON.features.forEach((item, index) => {
+      item.properties.sortIndex = index
+      item.properties.id = updateId
+    })
+  }
   if (!Object.keys(geojsonIdMap).includes(updateId)) return console.error('id不存在，无法修改')
   if (geoJSON.features && geoJSON.features.length > 1) {
     const index = geoJSON.features.findIndex((item) => item.geometry.type !== type)
@@ -101,7 +111,7 @@ let drawParams = {
   drawTemList: []
 }
 const drawGeoJSON = (type, id, options = {}) => {
-  if (drawParams.isDraw) handleRightClick(true)
+  if (drawParams.isDraw) handleEndDraw(true)
   if (!['Point', 'LineString', 'Polygon'].includes(type)) return console.error('type错误')
   drawParams.drawId = id || 'draw' + type
   drawParams.drawType = type
@@ -133,10 +143,11 @@ const drawDashPolygon = (points) => {
   cesiumRef.value.drawDashPolygon(points)
   mapboxRef.value.drawDashPolygon(points)
 }
-const handleleftClick = (geopoint) => {
+const handleStartDraw = (geopoint) => {
   if (drawParams.drawType === 'Point') {
     const Point = {
       type: 'Feature',
+      properties: {},
       geometry: {
         type: 'Point',
         coordinates: geopoint
@@ -171,7 +182,7 @@ const handleleftClick = (geopoint) => {
   updateGeoJSON(drawParams.drawJSON, drawParams.drawId, drawParams.drawOption)
 }
 
-const handleRightClick = (endAll) => {
+const handleEndDraw = (endAll) => {
   emit('drawEnd', drawParams.drawJSON)
   drawParams = {
     isDraw: false,
@@ -191,12 +202,37 @@ const handleRightClick = (endAll) => {
   props.currMap === 'cesium' && mapboxRef.value.drawfigureEnd()
 }
 
+const pickGeoJSON = () => {
+  mapboxRef.value.pickGeoJSON()
+  cesiumRef.value.pickGeoJSON()
+}
+
+const pickObj = {
+  id: '',
+  index: '',
+  type: '',
+  geoJSON: {},
+  nodes: []
+}
+const handlePickGeoJSON = (payload) => {
+  let { id, index, type } = payload
+  pickObj.id = id
+  pickObj.index = index
+  pickObj.type = type
+  pickObj.geoJSON = geojsonIdMap[id]
+  const coordinates = pickObj.geoJSON.features[index].geometry.coordinates
+  pickObj.nodes = type === 'LineString' ? coordinates : coordinates[0].slice(0, -1)
+  emit('pickedData', pickObj)
+}
+
+
 defineExpose({
   geojsonIdMap: toRef(() => geojsonIdMap),
   addGeoJSON,
   updateGeoJSON,
   removeGeoJSON,
-  drawGeoJSON
+  drawGeoJSON,
+  pickGeoJSON
 })
 </script>
 

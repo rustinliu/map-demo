@@ -1,6 +1,16 @@
 <template>
-  <Map :currMap="curr" ref="mapRef" @drawEnd="handlDrawEnd"></Map>
-  <Navbar :routerMode="false" @changeMap="toggleMap">
+  <Map :currMap="curr" ref="mapRef" @drawEnd="handlDrawEnd" @pickedData="handlePickedData"></Map>
+  <Navbar position="top">
+    <el-switch
+      style="--el-switch-on-color: #3a94f9; --el-switch-off-color: #21c764"
+      v-model="curr"
+      size="large"
+      inline-prompt
+      active-text="cesium"
+      active-value="cesium"
+      inactive-text="mapbox"
+      inactive-value="mapbox"
+    />
     <el-dropdown @command="handleAdd">
       <el-button type="primary"> 添加 </el-button>
       <template #dropdown>
@@ -42,6 +52,14 @@
       </template>
     </el-dropdown>
   </Navbar>
+  <Navbar position="bottom">
+    <el-button v-if="!curEditedInfo" @click="handleChoseEditData" type="primary">选择编辑图形</el-button>
+    <div v-if="curEditedInfo" style="flex-shrink:0 ">{{ curEditedInfo.id }}:</div>
+    <el-button v-if="curEditedInfo" type="primary">添加节点</el-button>
+    <el-button v-if="curEditedInfo" type="primary">删除节点</el-button>
+    <el-button v-if="curEditedInfo" type="primary">移动节点</el-button>
+    <el-button @click="handleStopEditData" v-if="curEditedInfo" type="danger">退出编辑</el-button>
+  </Navbar>
 </template>
 
 <script setup>
@@ -58,10 +76,6 @@ import Navbar from '@/components/navbar.vue'
 
 const curr = ref('mapbox')
 const mapRef = ref(null)
-
-const toggleMap = () => {
-  curr.value = curr.value === 'mapbox' ? 'cesium' : 'mapbox'
-}
 
 const handleAdd = (type) => {
   switch (type) {
@@ -121,8 +135,23 @@ const handleDraw = function (type) {
 }
 
 const handlDrawEnd = function (drawJSON) {
-  console.log('geoJSON',drawJSON)
+  console.log('geoJSON', drawJSON)
 }
+
+const curEditedInfo = ref(null)
+const handlePickedData = function (data) {
+  console.log('data', data)
+  curEditedInfo.value = data
+}
+const handleStopEditData = () =>{
+  curEditedInfo.value = null
+}
+
+const handleChoseEditData = () => {
+  mapRef.value.pickGeoJSON()
+}
+
+
 </script>
 
 <style lang="scss" scoped></style>
