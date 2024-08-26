@@ -120,7 +120,7 @@ const drawGeoJSON = (type, id, options = {}) => {
   drawParams.drawOption.cesium = options.cesium ? options.cesium : props.defaultGeoOptions.cesium[type]
   if (geojsonIdMap[drawParams.drawId]) {
     drawParams.drawJSON = geojsonIdMap[drawParams.drawId]
-    drawParams.drawPostion = drawParams.drawJSON.features.length
+    drawParams.drawPostion = options.drawPostion || drawParams.drawJSON.features.length
   } else {
     drawParams.drawJSON = {
       type: 'FeatureCollection',
@@ -130,9 +130,11 @@ const drawGeoJSON = (type, id, options = {}) => {
     addGeoJSON(drawParams.drawJSON, drawParams.drawId, drawParams.drawOption)
   }
 
-  drawParams.drawTemList = []
+  drawParams.drawTemList = options.drawTemList ? options.drawTemList : []
   mapboxRef.value.drawfigureStart(type)
   cesiumRef.value.drawfigureStart(type)
+  // 解决修改时第一段没虚线的问题
+  drawParams.drawTemList.length && handleStartDraw(options.drawTemList.pop())
   drawParams.isDraw = true
 }
 const drawDashLine = (latestPoint) => {
@@ -207,7 +209,7 @@ const pickGeoJSON = () => {
   cesiumRef.value.pickGeoJSON()
 }
 
-const pickObj = {
+let pickParams = {
   id: '',
   index: '',
   type: '',
@@ -216,15 +218,29 @@ const pickObj = {
 }
 const handlePickGeoJSON = (payload) => {
   let { id, index, type } = payload
-  pickObj.id = id
-  pickObj.index = index
-  pickObj.type = type
-  pickObj.geoJSON = geojsonIdMap[id]
-  const coordinates = pickObj.geoJSON.features[index].geometry.coordinates
-  pickObj.nodes = type === 'LineString' ? coordinates : coordinates[0].slice(0, -1)
-  emit('pickedData', pickObj)
+  pickParams.id = id
+  pickParams.index = index
+  pickParams.type = type
+  pickParams.geoJSON = geojsonIdMap[id]
+  const coordinates = pickParams.geoJSON.features[index].geometry.coordinates
+  pickParams.nodes = type === 'LineString' ? coordinates : coordinates[0].slice(0, -1)
+  emit('pickedData', pickParams)
 }
-
+const pickGeoJsonAdd = () => {
+  drawGeoJSON(pickParams.type, pickParams.id, {
+    drawPostion: pickParams.index,
+    drawTemList: pickParams.nodes
+  })
+}
+const stopEditGeoJSON = () => {
+  pickParams = {
+    id: '',
+    index: '',
+    type: '',
+    geoJSON: {},
+    nodes: []
+  }
+}
 
 defineExpose({
   geojsonIdMap: toRef(() => geojsonIdMap),
@@ -232,7 +248,9 @@ defineExpose({
   updateGeoJSON,
   removeGeoJSON,
   drawGeoJSON,
-  pickGeoJSON
+  pickGeoJSON,
+  pickGeoJsonAdd,
+  stopEditGeoJSON
 })
 </script>
 

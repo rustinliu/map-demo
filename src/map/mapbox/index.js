@@ -365,8 +365,8 @@ class CreateMap {
     }
     this.instance.on('mousemove', this.drawDotedPolygon)
   }
-
   pickGeoJSON(callBack) {
+    if(this.eventHandleMap.click) return
     if (this?.sourceLayerMap?.geoJSON) {
       const pickGeoJsonHandle = (e) => {
         const features = this.instance.queryRenderedFeatures(e.point)
@@ -387,9 +387,16 @@ class CreateMap {
       const endPickGeoJsonHandle = () => {
         this.instance.off('click', pickGeoJsonHandle)
         this.instance.off('contextmenu', endPickGeoJsonHandle)
+
+        this.eventHandleMap.click = null
+        this.eventHandleMap.contextmenu = null
       }
+      
       this.instance.on('click', pickGeoJsonHandle)
       this.instance.on('contextmenu', endPickGeoJsonHandle)
+
+      this.eventHandleMap.click = pickGeoJsonHandle
+      this.eventHandleMap.contextmenu = endPickGeoJsonHandle
     }
   }
 }
