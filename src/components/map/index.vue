@@ -1,7 +1,21 @@
 <template>
   <div class="map-wrapper">
-    <MapboxMap ref="mapboxRef" :visible="currMap === 'mapbox'" @StartDraw="handleStartDraw" @EndDraw="handleEndDraw" @PickGeoJSON="handlePickGeoJSON" />
-    <CesiumMap ref="cesiumRef" :visible="currMap === 'cesium'" @StartDraw="handleStartDraw" @EndDraw="handleEndDraw" @PickGeoJSON="handlePickGeoJSON" />
+    <MapboxMap
+      ref="mapboxRef"
+      :visible="currMap === 'mapbox'"
+      @StartDraw="handleStartDraw"
+      @EndDraw="handleEndDraw"
+      @PickGeoJSON="handlePickGeoJSON"
+      @PickNode="handlePickNode"
+    />
+    <CesiumMap
+      ref="cesiumRef"
+      :visible="currMap === 'cesium'"
+      @StartDraw="handleStartDraw"
+      @EndDraw="handleEndDraw"
+      @PickGeoJSON="handlePickGeoJSON"
+      @PickNode="handlePickNode"
+    />
   </div>
 </template>
 <script setup>
@@ -39,7 +53,7 @@ const props = defineProps({
     }
   }
 })
-const emit = defineEmits(['drawEnd', 'pickedData'])
+const emit = defineEmits(['mapMessage', 'drawEnd', 'pickedData', 'pickPoint'])
 
 watch(
   // 位置方向变化切换时同步地图
@@ -183,7 +197,6 @@ const handleStartDraw = (geopoint) => {
   }
   updateGeoJSON(drawParams.drawJSON, drawParams.drawId, drawParams.drawOption)
 }
-
 const handleEndDraw = (endAll) => {
   emit('drawEnd', drawParams.drawJSON)
   drawParams = {
@@ -204,17 +217,16 @@ const handleEndDraw = (endAll) => {
   props.currMap === 'cesium' && mapboxRef.value.drawfigureEnd()
 }
 
-const pickGeoJSON = () => {
-  mapboxRef.value.pickGeoJSON()
-  cesiumRef.value.pickGeoJSON()
-}
-
 let pickParams = {
   id: '',
   index: '',
   type: '',
   geoJSON: {},
   nodes: []
+}
+const pickGeoJSON = () => {
+  mapboxRef.value.pickGeoJSON()
+  cesiumRef.value.pickGeoJSON()
 }
 const handlePickGeoJSON = (payload) => {
   let { id, index, type } = payload
@@ -231,6 +243,77 @@ const pickGeoJsonAdd = () => {
     drawPostion: pickParams.index,
     drawTemList: pickParams.nodes
   })
+}
+const pickGeoJsonDel = () => {
+  let geojson = {
+    type: 'FeatureCollection',
+    features: []
+  }
+  geojson.features = pickParams.nodes.map((item, index) => ({
+    type: 'Feature',
+    properties: {
+      id: 'pickNode',
+      sortIndex: index,
+      position: item
+    },
+    geometry: {
+      type: 'Point',
+      coordinates: item
+    }
+  }))
+  mapboxRef.value.pickPosition(geojson)
+  cesiumRef.value.pickPosition(geojson)
+}
+const handlePickNode = (payload) => {
+  emit('pickedData', payload.position)
+  console.log('payload', payload)
+  console.log('pickParams', pickParams)
+  if (pickParams.type === 'LineString') {
+    if (pickParams.nodes.length > 2) {
+      pickParams.nodes.splice(payload.sortIndex, 1)
+      pickParams.geoJSON.features[pickParams.index].geometry.coordinates = pickParams.nodes
+      updateGeoJSON(pickParams.geoJSON, pickParams.id)
+    } else {
+      console.warn('构成LineString至少需要两个点，选中节点所在polyLine将被删除')
+      emit('mapMessage', {
+        module: 'editJson',
+        type: 'warning',
+        msg: '构成LineString至少需要两个点，选中节点所在polyLine将被删除'
+      })
+      if (pickParams.geoJSON.features.length > 1) {
+        pickParams.geoJSON.features.splice(pickParams.index, 1)
+        updateGeoJSON(pickParams.geoJSON, pickParams.id)
+        stopEditGeoJSON()
+      } else {
+        removeGeoJSON(pickParams.id)
+        stopEditGeoJSON()
+      }
+    }
+  } else if (pickParams.type === 'Polygon') {
+    console.log('pickParams.nodes', pickParams.nodes)
+    if (pickParams.nodes.length > 3) {
+      pickParams.nodes.splice(payload.sortIndex, 1)
+      const points = turf.featureCollection(pickParams.nodes.map((item) => turf.point(item)))
+      const Polygon = turf.convex(points)
+      pickParams.geoJSON.features[pickParams.index] = Polygon
+      updateGeoJSON(pickParams.geoJSON, pickParams.id)
+    } else {
+      console.warn('构成LPolygon至少需要三个点，选中节点所在LPolygon将被删除')
+      emit('mapMessage', {
+        module: 'editJson',
+        type: 'warning',
+        msg: '构成LPolygon至少需要三个点，选中节点所在LPolygon将被删除'
+      })
+      if (pickParams.geoJSON.features.length > 1) {
+        pickParams.geoJSON.features.splice(pickParams.index, 1)
+        updateGeoJSON(pickParams.geoJSON, pickParams.id)
+        stopEditGeoJSON()
+      } else {
+        removeGeoJSON(pickParams.id)
+        stopEditGeoJSON()
+      }
+    }
+  }
 }
 const stopEditGeoJSON = () => {
   pickParams = {
@@ -250,6 +333,7 @@ defineExpose({
   drawGeoJSON,
   pickGeoJSON,
   pickGeoJsonAdd,
+  pickGeoJsonDel,
   stopEditGeoJSON
 })
 </script>

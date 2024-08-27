@@ -442,6 +442,9 @@ class CreateMap {
       this.handler.setInputAction(endPickGeoJsonHandle, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     }
   }
+  pickPosition(geojson) {
+
+  }
 }
 
 export default CreateMap

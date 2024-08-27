@@ -44,6 +44,7 @@ const drawDashLine = (point) => cesiumMap.drawDashLine(point)
 const drawDashPolygon = (pointList) => cesiumMap.drawDashPolygon(pointList)
 
 const pickGeoJSON = () => cesiumMap.pickGeoJSON((data) => emit('PickGeoJSON', data))
+const pickPosition = (geojson) => cesiumMap.pickPosition(geojson)
 
 defineExpose({
   instance: toRef(() => cesiumMap.instance),
@@ -55,7 +56,8 @@ defineExpose({
   drawfigureEnd,
   drawDashLine,
   drawDashPolygon,
-  pickGeoJSON
+  pickGeoJSON,
+  pickPosition
 })
 </script>
 

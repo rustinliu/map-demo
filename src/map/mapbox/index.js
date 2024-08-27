@@ -366,7 +366,7 @@ class CreateMap {
     this.instance.on('mousemove', this.drawDotedPolygon)
   }
   pickGeoJSON(callBack) {
-    if(this.eventHandleMap.click) return
+    if (this.eventHandleMap.click) return
     if (this?.sourceLayerMap?.geoJSON) {
       const pickGeoJsonHandle = (e) => {
         const features = this.instance.queryRenderedFeatures(e.point)
@@ -391,13 +391,50 @@ class CreateMap {
         this.eventHandleMap.click = null
         this.eventHandleMap.contextmenu = null
       }
-      
+
       this.instance.on('click', pickGeoJsonHandle)
       this.instance.on('contextmenu', endPickGeoJsonHandle)
 
       this.eventHandleMap.click = pickGeoJsonHandle
       this.eventHandleMap.contextmenu = endPickGeoJsonHandle
     }
+  }
+  pickPosition(geojson, callBack) {
+    if (this.eventHandleMap.click) return
+    this.addGeojsonToMap('pickNode', geojson, {
+      type: 'circle',
+      paint: {
+        'circle-color': '#e84640',
+        'circle-radius': 8,
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#e84640'
+      }
+    })
+
+    const pickPointHandle = (e) => {
+      const features = this.instance.queryRenderedFeatures(e.point)
+      if (features && features.length) {
+        const id = features[0]?.layer?.id
+        if (id === 'pickNode') {
+          callBack(features[0].properties)
+          stopPickPointHandle()
+        }
+      }
+    }
+    const stopPickPointHandle = () => {
+      this.delGeojsonInMap('pickNode')
+      this.instance.off('click', pickPointHandle)
+      this.instance.off('contextmenu', stopPickPointHandle)
+
+      this.eventHandleMap.click = null
+      this.eventHandleMap.contextmenu = null
+    }
+
+    this.instance.on('click', pickPointHandle)
+    this.instance.on('contextmenu', stopPickPointHandle)
+
+    this.eventHandleMap.click = pickPointHandle
+    this.eventHandleMap.contextmenu = stopPickPointHandle
   }
 }
 

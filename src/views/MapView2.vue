@@ -56,7 +56,7 @@
     <el-button v-if="!curEditedInfo" @click="handleChoseEditData" type="primary">选择编辑图形</el-button>
     <div v-if="curEditedInfo" style="flex-shrink: 0">{{ curEditedInfo.id }}:</div>
     <el-button v-if="curEditedInfo" type="primary" @click="handlePickGeoJsonAdd">添加节点</el-button>
-    <el-button v-if="curEditedInfo" type="primary">删除节点</el-button>
+    <el-button v-if="curEditedInfo" type="primary" @click="handlePickGeoJsonDel">删除节点</el-button>
     <el-button v-if="curEditedInfo" type="primary">移动节点</el-button>
     <el-button @click="handleStopEditData" v-if="curEditedInfo" type="danger">退出编辑</el-button>
   </Navbar>
@@ -150,6 +150,10 @@ const handleStopEditData = () => {
 
 const handlePickGeoJsonAdd = () => {
   mapRef.value.pickGeoJsonAdd()
+}
+
+const handlePickGeoJsonDel = ()=> {
+  mapRef.value.pickGeoJsonDel()
 }
 
 const handleChoseEditData = () => {
