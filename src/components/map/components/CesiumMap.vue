@@ -27,7 +27,7 @@ onUnmounted(() => {
 //   cesiumMap && (cesiumMap.instance.container.style.display = props.visible ? 'block' : 'none')
 //   props.visible && cesiumMap && cesiumMap.instance.resize()
 // })
-const emit = defineEmits(['StartDraw', 'EndDraw', 'PickGeoJSON'])
+const emit = defineEmits(['StartDraw', 'EndDraw', 'PickGeoJSON', 'StopPickGeoJSON', 'PickNode'])
 
 const addGeojsonToMap = (id, geojson, options, isZoom) => cesiumMap.addGeojsonToMap(id, geojson, options, isZoom)
 const modGeojsonInMap = (id, geojson, options, isReload) => cesiumMap.modGeojsonInMap(id, geojson, options, isReload)
@@ -43,8 +43,19 @@ const drawfigureEnd = () => cesiumMap.drawfigureEnd()
 const drawDashLine = (point) => cesiumMap.drawDashLine(point)
 const drawDashPolygon = (pointList) => cesiumMap.drawDashPolygon(pointList)
 
-const pickGeoJSON = () => cesiumMap.pickGeoJSON((data) => emit('PickGeoJSON', data))
-const pickPosition = (geojson) => cesiumMap.pickPosition(geojson)
+const pickGeoJSON = () =>
+  cesiumMap.pickGeoJSON(
+    (data) => emit('PickGeoJSON', data),
+    () => emit('StopPickGeoJSON')
+  )
+const endPickGeoJSON = () => cesiumMap.endPickGeoJSON()
+const pickPosition = (geojson) =>
+  cesiumMap.pickPosition(
+    geojson,
+    (data) => emit('PickNode', data),
+    () => emit('StopPickNode')
+  )
+const endPickPosition = () => cesiumMap.endPickPosition()
 
 defineExpose({
   instance: toRef(() => cesiumMap.instance),
@@ -57,7 +68,9 @@ defineExpose({
   drawDashLine,
   drawDashPolygon,
   pickGeoJSON,
-  pickPosition
+  endPickGeoJSON,
+  pickPosition,
+  endPickPosition
 })
 </script>
 

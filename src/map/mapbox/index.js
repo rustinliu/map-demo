@@ -365,8 +365,9 @@ class CreateMap {
     }
     this.instance.on('mousemove', this.drawDotedPolygon)
   }
-  pickGeoJSON(callBack) {
+  pickGeoJSON(callBack, stopCallBack) {
     if (this.eventHandleMap.click) return
+    this.instance.getCanvas().style.cursor = 'pointer'
     if (this?.sourceLayerMap?.geoJSON) {
       const pickGeoJsonHandle = (e) => {
         const features = this.instance.queryRenderedFeatures(e.point)
@@ -380,27 +381,28 @@ class CreateMap {
               id,
               type: features[0]._geometry.type
             })
-            endPickGeoJsonHandle()
           }
         }
       }
-      const endPickGeoJsonHandle = () => {
-        this.instance.off('click', pickGeoJsonHandle)
-        this.instance.off('contextmenu', endPickGeoJsonHandle)
-
-        this.eventHandleMap.click = null
-        this.eventHandleMap.contextmenu = null
-      }
-
       this.instance.on('click', pickGeoJsonHandle)
-      this.instance.on('contextmenu', endPickGeoJsonHandle)
+      this.instance.on('contextmenu', stopCallBack)
 
       this.eventHandleMap.click = pickGeoJsonHandle
-      this.eventHandleMap.contextmenu = endPickGeoJsonHandle
+      this.eventHandleMap.contextmenu = stopCallBack
     }
   }
-  pickPosition(geojson, callBack) {
+  endPickGeoJSON() {
+    this.instance.getCanvas().style.cursor = 'default'
+    this.instance.off('click', this.eventHandleMap.click)
+    this.instance.off('contextmenu', this.eventHandleMap.contextmenu)
+
+    this.eventHandleMap.click = null
+    this.eventHandleMap.contextmenu = null
+  }
+
+  pickPosition(geojson, callBack, stopCallBack) {
     if (this.eventHandleMap.click) return
+    this.instance.getCanvas().style.cursor = 'pointer'
     this.addGeojsonToMap('pickNode', geojson, {
       type: 'circle',
       paint: {
@@ -417,24 +419,24 @@ class CreateMap {
         const id = features[0]?.layer?.id
         if (id === 'pickNode') {
           callBack(features[0].properties)
-          stopPickPointHandle()
         }
       }
     }
-    const stopPickPointHandle = () => {
-      this.delGeojsonInMap('pickNode')
-      this.instance.off('click', pickPointHandle)
-      this.instance.off('contextmenu', stopPickPointHandle)
-
-      this.eventHandleMap.click = null
-      this.eventHandleMap.contextmenu = null
-    }
 
     this.instance.on('click', pickPointHandle)
-    this.instance.on('contextmenu', stopPickPointHandle)
+    this.instance.on('contextmenu', stopCallBack)
 
     this.eventHandleMap.click = pickPointHandle
-    this.eventHandleMap.contextmenu = stopPickPointHandle
+    this.eventHandleMap.contextmenu = stopCallBack
+  }
+  endPickPosition() {
+    this.instance.getCanvas().style.cursor = 'default'
+    this.delGeojsonInMap('pickNode')
+    this.instance.off('click', this.eventHandleMap.click)
+    this.instance.off('contextmenu', this.eventHandleMap.contextmenu)
+
+    this.eventHandleMap.click = null
+    this.eventHandleMap.contextmenu = null
   }
 }
 

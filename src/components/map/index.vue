@@ -6,7 +6,9 @@
       @StartDraw="handleStartDraw"
       @EndDraw="handleEndDraw"
       @PickGeoJSON="handlePickGeoJSON"
+      @StopPickGeoJSON="handleStopPickGeoJSON"
       @PickNode="handlePickNode"
+      @StopPickNode="handleStopPickNode"
     />
     <CesiumMap
       ref="cesiumRef"
@@ -14,7 +16,9 @@
       @StartDraw="handleStartDraw"
       @EndDraw="handleEndDraw"
       @PickGeoJSON="handlePickGeoJSON"
+      @StopPickGeoJSON="handleStopPickGeoJSON"
       @PickNode="handlePickNode"
+      @StopPickNode="handleStopPickNode"
     />
   </div>
 </template>
@@ -222,13 +226,15 @@ let pickParams = {
   index: '',
   type: '',
   geoJSON: {},
-  nodes: []
+  nodes: [],
+  action: ''
 }
 const pickGeoJSON = () => {
   mapboxRef.value.pickGeoJSON()
   cesiumRef.value.pickGeoJSON()
 }
 const handlePickGeoJSON = (payload) => {
+  handleStopPickGeoJSON()
   let { id, index, type } = payload
   pickParams.id = id
   pickParams.index = index
@@ -237,6 +243,10 @@ const handlePickGeoJSON = (payload) => {
   const coordinates = pickParams.geoJSON.features[index].geometry.coordinates
   pickParams.nodes = type === 'LineString' ? coordinates : coordinates[0].slice(0, -1)
   emit('pickedData', pickParams)
+}
+const handleStopPickGeoJSON = () => {
+  mapboxRef.value.endPickGeoJSON()
+  cesiumRef.value.endPickGeoJSON()
 }
 const pickGeoJsonAdd = () => {
   drawGeoJSON(pickParams.type, pickParams.id, {
@@ -263,57 +273,66 @@ const pickGeoJsonDel = () => {
   }))
   mapboxRef.value.pickPosition(geojson)
   cesiumRef.value.pickPosition(geojson)
+  pickParams.action = 'DEL'
 }
 const handlePickNode = (payload) => {
-  emit('pickedData', payload.position)
-  console.log('payload', payload)
-  console.log('pickParams', pickParams)
-  if (pickParams.type === 'LineString') {
-    if (pickParams.nodes.length > 2) {
-      pickParams.nodes.splice(payload.sortIndex, 1)
-      pickParams.geoJSON.features[pickParams.index].geometry.coordinates = pickParams.nodes
-      updateGeoJSON(pickParams.geoJSON, pickParams.id)
-    } else {
-      console.warn('构成LineString至少需要两个点，选中节点所在polyLine将被删除')
-      emit('mapMessage', {
-        module: 'editJson',
-        type: 'warning',
-        msg: '构成LineString至少需要两个点，选中节点所在polyLine将被删除'
-      })
-      if (pickParams.geoJSON.features.length > 1) {
-        pickParams.geoJSON.features.splice(pickParams.index, 1)
+  handleStopPickNode()
+  if (pickParams.action === 'DEL') {
+    if (pickParams.type === 'LineString') {
+      if (pickParams.nodes.length > 2) {
+        pickParams.nodes.splice(payload.sortIndex, 1)
+        pickParams.geoJSON.features[pickParams.index].geometry.coordinates = pickParams.nodes
         updateGeoJSON(pickParams.geoJSON, pickParams.id)
-        stopEditGeoJSON()
       } else {
-        removeGeoJSON(pickParams.id)
-        stopEditGeoJSON()
+        console.warn('构成LineString至少需要两个点，选中节点所在polyLine将被删除')
+        emit('mapMessage', {
+          module: 'editJson',
+          type: 'warning',
+          msg: '构成LineString至少需要两个点，选中节点所在polyLine将被删除'
+        })
+        if (pickParams.geoJSON.features.length > 1) {
+          pickParams.geoJSON.features.splice(pickParams.index, 1)
+          updateGeoJSON(pickParams.geoJSON, pickParams.id)
+          stopEditGeoJSON()
+          emit('pickedData', null)
+        } else {
+          removeGeoJSON(pickParams.id)
+          stopEditGeoJSON()
+          emit('pickedData', null)
+        }
       }
-    }
-  } else if (pickParams.type === 'Polygon') {
-    console.log('pickParams.nodes', pickParams.nodes)
-    if (pickParams.nodes.length > 3) {
-      pickParams.nodes.splice(payload.sortIndex, 1)
-      const points = turf.featureCollection(pickParams.nodes.map((item) => turf.point(item)))
-      const Polygon = turf.convex(points)
-      pickParams.geoJSON.features[pickParams.index] = Polygon
-      updateGeoJSON(pickParams.geoJSON, pickParams.id)
-    } else {
-      console.warn('构成LPolygon至少需要三个点，选中节点所在LPolygon将被删除')
-      emit('mapMessage', {
-        module: 'editJson',
-        type: 'warning',
-        msg: '构成LPolygon至少需要三个点，选中节点所在LPolygon将被删除'
-      })
-      if (pickParams.geoJSON.features.length > 1) {
-        pickParams.geoJSON.features.splice(pickParams.index, 1)
+    } else if (pickParams.type === 'Polygon') {
+      if (pickParams.nodes.length > 3) {
+        pickParams.nodes.splice(payload.sortIndex, 1)
+        const points = turf.featureCollection(pickParams.nodes.map((item) => turf.point(item)))
+        const Polygon = turf.convex(points)
+        pickParams.geoJSON.features[pickParams.index] = Polygon
         updateGeoJSON(pickParams.geoJSON, pickParams.id)
-        stopEditGeoJSON()
       } else {
-        removeGeoJSON(pickParams.id)
-        stopEditGeoJSON()
+        console.warn('构成LPolygon至少需要三个点，选中节点所在Polygon将被删除')
+        emit('mapMessage', {
+          module: 'editJson',
+          type: 'warning',
+          msg: '构成LPolygon至少需要三个点，选中节点所在Polygon将被删除'
+        })
+        if (pickParams.geoJSON.features.length > 1) {
+          pickParams.geoJSON.features.splice(pickParams.index, 1)
+          updateGeoJSON(pickParams.geoJSON, pickParams.id)
+          stopEditGeoJSON()
+          emit('pickedData', null)
+        } else {
+          removeGeoJSON(pickParams.id)
+          stopEditGeoJSON()
+          emit('pickedData', null)
+        }
       }
     }
   }
+  pickParams.action = ''
+}
+const handleStopPickNode = () => {
+  mapboxRef.value.endPickPosition()
+  cesiumRef.value.endPickPosition()
 }
 const stopEditGeoJSON = () => {
   pickParams = {
@@ -321,7 +340,8 @@ const stopEditGeoJSON = () => {
     index: '',
     type: '',
     geoJSON: {},
-    nodes: []
+    nodes: [],
+    action: ''
   }
 }
 

@@ -120,7 +120,13 @@ const handleDel = (type) => {
 }
 
 const handleDraw = function (type) {
-  ElMessage({ type: 'success', message: '点击左键确认坐标，点击右键退出绘制，绘制中途可切换地图查看', offset: 70, showClose: true, duration: 2000 })
+  ElMessage({
+    type: 'success',
+    message: '点击左键确认坐标，点击右键退出绘制，绘制中途可切换地图查看',
+    offset: 70,
+    showClose: true,
+    duration: 2000
+  })
   switch (type) {
     case 'A':
       mapRef.value.drawGeoJSON('Point')
@@ -140,7 +146,6 @@ const handlDrawEnd = function (drawJSON) {
 
 const curEditedInfo = ref(null)
 const handlePickedData = function (data) {
-  console.log('data', data)
   curEditedInfo.value = data
 }
 const handleStopEditData = () => {
@@ -152,7 +157,7 @@ const handlePickGeoJsonAdd = () => {
   mapRef.value.pickGeoJsonAdd()
 }
 
-const handlePickGeoJsonDel = ()=> {
+const handlePickGeoJsonDel = () => {
   mapRef.value.pickGeoJsonDel()
 }
 

@@ -72,22 +72,14 @@ class CreateMap {
     })
   }
 
-  addGeojsonToMap(id, geojson, options, isZoom = false) {
+  addGeojsonToMap(id, geojson, options, callBack = () => {}) {
     this.dataSourcesMap.geoJSON = this.dataSourcesMap.geoJSON || {}
     if (Object.keys(this.dataSourcesMap.geoJSON).includes(id)) {
       return console.log('该ID已存在')
     }
     this.instance.dataSources.add(Cesium.GeoJsonDataSource.load(geojson, options)).then((dataSource) => {
-      // dataSource.entities.values.forEach(value => {
-      //   value.billboard = undefined;
-      //   value.point = {
-      //     pixelSize: 10,
-      //     color: Cesium.Color.RED,
-      //     show: true
-      //   }
-      // })
+      callBack(dataSource)
       this.dataSourcesMap.geoJSON[id] = dataSource
-      isZoom && this.instance.zoomTo(dataSource)
     })
   }
 
@@ -121,9 +113,12 @@ class CreateMap {
   }
 
   drawfigures(id, type, options) {
-    this.handler.getInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK) && this.handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
-    this.handler.getInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK) && this.handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
-    this.handler.getInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE) && this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+    this.handler.getInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK) &&
+      this.handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
+    this.handler.getInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK) &&
+      this.handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+    this.handler.getInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE) &&
+      this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
     this.delGeojsonInMap('drawDottedLine')
     this.instance._container.style.cursor = 'crosshair'
     let geojson = {
@@ -171,10 +166,12 @@ class CreateMap {
           let dotDataSource = this.dataSourcesMap.geoJSON && this.dataSourcesMap.geoJSON['dotDataSource']
           if (!dotDataSource) {
             this.dataSourcesMap.geoJSON = this.dataSourcesMap.geoJSON || {}
-            await this.instance.dataSources.add(Cesium.GeoJsonDataSource.load(dotDataJSON, options)).then((dataSource) => {
-              this.dataSourcesMap.geoJSON['dotDataSource'] = dataSource
-              dotDataSource = dataSource
-            })
+            await this.instance.dataSources
+              .add(Cesium.GeoJsonDataSource.load(dotDataJSON, options))
+              .then((dataSource) => {
+                this.dataSourcesMap.geoJSON['dotDataSource'] = dataSource
+                dotDataSource = dataSource
+              })
           }
           await dotDataSource.load(dotDataJSON, options)
           // 为 GeoJSON 线设置虚线材质
@@ -323,10 +320,12 @@ class CreateMap {
         let dotDataSource = this.dataSourcesMap.geoJSON && this.dataSourcesMap.geoJSON['dotDataSource']
         if (!dotDataSource) {
           this.dataSourcesMap.geoJSON = this.dataSourcesMap.geoJSON || {}
-          await this.instance.dataSources.add(Cesium.GeoJsonDataSource.load(dotDataJSON, options)).then((dataSource) => {
-            this.dataSourcesMap.geoJSON['dotDataSource'] = dataSource
-            dotDataSource = dataSource
-          })
+          await this.instance.dataSources
+            .add(Cesium.GeoJsonDataSource.load(dotDataJSON, options))
+            .then((dataSource) => {
+              this.dataSourcesMap.geoJSON['dotDataSource'] = dataSource
+              dotDataSource = dataSource
+            })
         }
         await dotDataSource.load(dotDataJSON, options)
         // 为 GeoJSON 线设置虚线材质
@@ -389,10 +388,12 @@ class CreateMap {
         let polygonDataSource = this.dataSourcesMap.geoJSON && this.dataSourcesMap.geoJSON['polygonDataSource']
         if (!polygonDataSource) {
           this.dataSourcesMap.geoJSON = this.dataSourcesMap.geoJSON || {}
-          await this.instance.dataSources.add(Cesium.GeoJsonDataSource.load(polygonJSON, options)).then((dataSource) => {
-            this.dataSourcesMap.geoJSON['polygonDataSource'] = dataSource
-            polygonDataSource = dataSource
-          })
+          await this.instance.dataSources
+            .add(Cesium.GeoJsonDataSource.load(polygonJSON, options))
+            .then((dataSource) => {
+              this.dataSourcesMap.geoJSON['polygonDataSource'] = dataSource
+              polygonDataSource = dataSource
+            })
         }
         await polygonDataSource.load(polygonJSON, options)
         // 为 GeoJSON 线设置虚线材质
@@ -421,29 +422,69 @@ class CreateMap {
     this.handler.setInputAction(drawDottedPolygon, Cesium.ScreenSpaceEventType.MOUSE_MOVE)
   }
 
-  pickGeoJSON(callBack) {
+  pickGeoJSON(callBack, stopCallBack) {
     if (this?.dataSourcesMap?.geoJSON) {
+      this.instance._container.style.cursor = 'pointer'
       const pickGeoJsonHandle = (click) => {
         const pickedObject = this.instance.scene.pick(click.position)
         // 如果被点击的对象是一个实体，并且这个实体来自你的 GeoJSON 数据源
         if (Cesium.defined(pickedObject) && pickedObject.id instanceof Cesium.Entity) {
           const entity = pickedObject.id
           if (entity.polygon || entity.polyline) {
-            callBack({ index: entity.properties.sortIndex, id: entity.properties.id, type: entity.polygon ? 'Polygon' : 'LineString' })
-            endPickGeoJsonHandle()
+            callBack({
+              index: entity.properties.sortIndex._value,
+              id: entity.properties.id._value,
+              type: entity.polygon ? 'Polygon' : 'LineString'
+            })
           }
         }
       }
-      const endPickGeoJsonHandle = () => {
-        this.handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
-        this.handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
-      }
       this.handler.setInputAction(pickGeoJsonHandle, Cesium.ScreenSpaceEventType.LEFT_CLICK)
-      this.handler.setInputAction(endPickGeoJsonHandle, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+      this.handler.setInputAction(stopCallBack, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     }
   }
-  pickPosition(geojson) {
+  endPickGeoJSON() {
+    this.instance._container.style.cursor = 'default'
+    this.handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
+    this.handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+  }
 
+  pickPosition(geojson, callBack, stopCallBack) {
+    if (this.handler.getInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)) return
+    this.instance._container.style.cursor = 'pointer'
+    this.addGeojsonToMap('pickNode', geojson, {}, (dataSource) => {
+      dataSource.entities.values.forEach((value) => {
+        value.billboard = undefined
+        value.point = {
+          pixelSize: 15,
+          color: Cesium.Color.RED,
+          show: true
+        }
+      })
+    })
+    const pickGeoJsonHandle = (click) => {
+      const pickedObject = this.instance.scene.pick(click.position)
+      // 如果被点击的对象是一个实体，并且这个实体来自你的 GeoJSON 数据源
+      if (Cesium.defined(pickedObject) && pickedObject.id instanceof Cesium.Entity) {
+        const entity = pickedObject.id
+        if (entity.properties && entity.properties.id._value === 'pickNode') {
+          callBack({
+            id: entity.properties.id._value,
+            position: entity.properties.position._value,
+            sortIndex: entity.properties.sortIndex._value
+          })
+        }
+      }
+    }
+
+    this.handler.setInputAction(pickGeoJsonHandle, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+    this.handler.setInputAction(stopCallBack, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+  }
+  endPickPosition() {
+    this.instance._container.style.cursor = 'default'
+    this.delGeojsonInMap('pickNode')
+    this.handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK)
+    this.handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK)
   }
 }
 
