@@ -40,7 +40,7 @@ const drawfigureStart = (type) =>
     () => emit('EndDraw')
   )
 const drawfigureEnd = () => cesiumMap.drawfigureEnd()
-const drawDashLine = (point) => cesiumMap.drawDashLine(point)
+const drawDashLine = (pointList) => cesiumMap.drawDashLine(pointList)
 const drawDashPolygon = (pointList) => cesiumMap.drawDashPolygon(pointList)
 
 const pickGeoJSON = () =>

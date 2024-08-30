@@ -7,6 +7,9 @@ const defaultInitOption = {
   // ! Widgets
   animation: false, // 是否创建动画小器件，左下角仪表
   baseLayerPicker: false, // 是否显示图层选择器:将图层选择的控件关掉，才能添加其他影像数据
+  // baseLayer: Cesium.ImageryLayer.fromWorldImagery({
+  //   style: Cesium.IonWorldImageryStyle.ROAD
+  // }),
   fullscreenButton: false, // 是否显示全屏按钮
   geocoder: false, // 是否显示geocoder小器件，右上角查询按钮
   homeButton: false, // 是否显示Home按钮

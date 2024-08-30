@@ -38,7 +38,7 @@ const drawfigureStart = (type) =>
     () => emit('EndDraw')
   )
 const drawfigureEnd = () => mapboxMap.drawfigureEnd()
-const drawDashLine = (point) => mapboxMap.drawDashLine(point)
+const drawDashLine = (pointList) => mapboxMap.drawDashLine(pointList)
 const drawDashPolygon = (pointList) => mapboxMap.drawDashPolygon(pointList)
 
 const pickGeoJSON = () =>

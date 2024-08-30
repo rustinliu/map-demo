@@ -288,7 +288,7 @@ class CreateMap {
       this?.dataSourcesMap?.geoJSON['polygonDataSource'] && this.delGeojsonInMap('polygonDataSource')
     }
   }
-  drawDashLine(lastPoint) {
+  drawDashLine(points) {
     if (this.handler.getInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)) {
       this.handler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE)
       this?.dataSourcesMap?.geoJSON['dotDataSource'] && this.delGeojsonInMap('dotDataSource')
@@ -303,16 +303,24 @@ class CreateMap {
         const dotDataJSON = {
           type: 'FeatureCollection',
           features: [
-            {
-              type: 'Feature',
-              properties: {},
-              geometry: {
-                type: 'LineString',
-                coordinates: [lastPoint, [longitude, latitude]]
-              }
-            }
+            // {
+            //   type: 'Feature',
+            //   properties: {},
+            //   geometry: {
+            //     type: 'LineString',
+            //     coordinates: [lastPoint, [longitude, latitude]]
+            //   }
+            // }
           ]
         }
+        dotDataJSON.features = points.map((item) => ({
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: [item, [longitude, latitude]]
+          }
+        }))
         const options = {
           // // 线属性
           strokeWidth: 5,
@@ -440,8 +448,12 @@ class CreateMap {
           }
         }
       }
+      const stopPickGeoJsonHandle = () => {
+        this.instance._container.style.cursor = 'default'
+        stopCallBack()
+      }
       this.handler.setInputAction(pickGeoJsonHandle, Cesium.ScreenSpaceEventType.LEFT_CLICK)
-      this.handler.setInputAction(stopCallBack, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+      this.handler.setInputAction(stopPickGeoJsonHandle, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     }
   }
   endPickGeoJSON() {

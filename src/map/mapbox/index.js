@@ -1,4 +1,5 @@
 import mapboxgl from 'mapbox-gl'
+import MapboxLanguage from '@mapbox/mapbox-gl-language'
 import * as turf from '@turf/turf'
 
 import { deafaultAccessToken, defaultInitOption, defaultFlyOptions } from './config'
@@ -17,6 +18,12 @@ class CreateMap {
     this.sourceLayerMap = {}
     // 存储事件及回调名称 eventType: callBackName
     this.eventHandleMap = {}
+
+    this.instance.addControl(
+      new MapboxLanguage({
+        defaultLanguage: 'zh-Hans'
+      })
+    )
   }
   removeMap() {
     this.instance.remove()
@@ -266,7 +273,7 @@ class CreateMap {
       this.drawDotedPolygon = null
     }
   }
-  drawDashLine(point) {
+  drawDashLine(points) {
     if (this.drawDottedLine) {
       this.sourceLayerMap.geoJSON['drawDottedLine'] && this.delGeojsonInMap('drawDottedLine')
       this?.instance?.off('mousemove', this.drawDottedLine)
@@ -275,16 +282,24 @@ class CreateMap {
       const dataJSON = {
         type: 'FeatureCollection',
         features: [
-          {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-              type: 'LineString',
-              coordinates: [point, [e.lngLat.lng, e.lngLat.lat]]
-            }
-          }
+          // {
+          //   type: 'Feature',
+          //   properties: {},
+          //   geometry: {
+          //     type: 'LineString',
+          //     coordinates: [point, [e.lngLat.lng, e.lngLat.lat]]
+          //   }
+          // }
         ]
       }
+      dataJSON.features = points.map((item) => ({
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates: [item, [e.lngLat.lng, e.lngLat.lat]]
+        }
+      }))
       const source = this.instance.getSource('drawDottedLine')
       if (!source) {
         this.instance.addSource('drawDottedLine', {
@@ -385,11 +400,15 @@ class CreateMap {
           }
         }
       }
+      const stopPickGeoJsonHandle = () => {
+        this.instance.getCanvas().style.cursor = 'default'
+        stopCallBack()
+      }
       this.instance.on('click', pickGeoJsonHandle)
-      this.instance.on('contextmenu', stopCallBack)
+      this.instance.on('contextmenu', stopPickGeoJsonHandle)
 
       this.eventHandleMap.click = pickGeoJsonHandle
-      this.eventHandleMap.contextmenu = stopCallBack
+      this.eventHandleMap.contextmenu = stopPickGeoJsonHandle
     }
   }
   endPickGeoJSON() {

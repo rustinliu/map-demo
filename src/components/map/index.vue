@@ -159,9 +159,9 @@ const drawGeoJSON = (type, id, options = {}) => {
   drawParams.drawTemList.length && handleStartDraw(options.drawTemList.pop())
   drawParams.isDraw = true
 }
-const drawDashLine = (latestPoint) => {
-  cesiumRef.value.drawDashLine(latestPoint)
-  mapboxRef.value.drawDashLine(latestPoint)
+const drawDashLine = (points) => {
+  cesiumRef.value.drawDashLine(points)
+  mapboxRef.value.drawDashLine(points)
 }
 const drawDashPolygon = (points) => {
   cesiumRef.value.drawDashPolygon(points)
@@ -181,7 +181,7 @@ const handleStartDraw = (geopoint) => {
   }
   if (drawParams.drawType === 'LineString') {
     drawParams.drawTemList.push(geopoint)
-    drawDashLine(geopoint)
+    drawDashLine([geopoint])
     if (drawParams.drawTemList.length > 1) {
       const LineString = {
         type: 'Feature',
@@ -358,6 +358,12 @@ const handlePickNode = (payload) => {
     mapboxRef.value.positionMoveStart()
     cesiumRef.value.positionMoveStart()
     if (pickParams.type === 'LineString') {
+      const tempList = []
+      const prevIndex = pickParams.pickNodesIndex - 1
+      prevIndex >= 0 && tempList.push(pickParams.nodes[prevIndex])
+      const nextIndex = pickParams.pickNodesIndex + 1
+      nextIndex < pickParams.nodes.length && tempList.push(pickParams.nodes[nextIndex])
+      drawDashLine(tempList)
     }
     if (pickParams.type === 'Polygon') {
       const tempList = JSON.parse(JSON.stringify(pickParams.nodes))
@@ -372,6 +378,8 @@ const handleStopPickNode = () => {
 }
 const handleStartMove = (position) => {
   if (pickParams.type === 'LineString') {
+    pickParams.nodes.splice(pickParams.pickNodesIndex, 1, position)
+    pickParams.geoJSON.features[pickParams.index].geometry.coordinates = pickParams.nodes
   }
   if (pickParams.type === 'Polygon') {
     pickParams.nodes.splice(pickParams.pickNodesIndex, 1, position)

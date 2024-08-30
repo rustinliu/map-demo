@@ -170,13 +170,34 @@ const handleStopEditData = () => {
 }
 
 const handlePickGeoJsonAdd = () => {
+  ElMessage({
+    type: 'success',
+    message: '左键选择添加坐标，右键退出添加模式',
+    offset: 70,
+    showClose: true,
+    duration: 2000
+  })
   mapRef.value.pickGeoJsonAdd()
 }
 
 const handlePickGeoJsonDel = () => {
+  ElMessage({
+    type: 'success',
+    message: '左键选择删除节点，右键退出删除模式',
+    offset: 70,
+    showClose: true,
+    duration: 2000
+  })
   mapRef.value.pickGeoJsonDel()
 }
 const handlePickGeoJsonMov = () => {
+  ElMessage({
+    type: 'success',
+    message: '左键选择移动节点，右键退出移动模式',
+    offset: 70,
+    showClose: true,
+    duration: 2000
+  })
   mapRef.value.pickGeoJsonMov()
 }
 const handleChoseEditData = () => {
