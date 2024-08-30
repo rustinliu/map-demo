@@ -256,7 +256,7 @@ class CreateMap {
     this.handler.setInputAction(confirmPath, Cesium.ScreenSpaceEventType.LEFT_CLICK)
     this.handler.setInputAction(stopDraw, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
   }
-  drawfigureStart(type, leftClickCallback, rightClickCallback) {
+  drawfigureStart(type, leftClickCallback, rightClickCallback, once = false) {
     this.instance._container.style.cursor = 'crosshair'
     const confirmPath = (event) => {
       // 获取鼠标点击位置的三维坐标
@@ -267,6 +267,7 @@ class CreateMap {
         const longitude = Cesium.Math.toDegrees(cartographic.longitude)
         const latitude = Cesium.Math.toDegrees(cartographic.latitude)
         leftClickCallback([Number(longitude.toFixed(3).slice(0, -1)), Number(latitude.toFixed(3).slice(0, -1))])
+        once && stopDraw()
       }
     }
     const stopDraw = () => {

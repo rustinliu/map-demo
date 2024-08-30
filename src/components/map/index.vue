@@ -9,6 +9,8 @@
       @StopPickGeoJSON="handleStopPickGeoJSON"
       @PickNode="handlePickNode"
       @StopPickNode="handleStopPickNode"
+      @StartMove="handleStartMove"
+      @EndMove="handleEndMove"
     />
     <CesiumMap
       ref="cesiumRef"
@@ -19,6 +21,8 @@
       @StopPickGeoJSON="handleStopPickGeoJSON"
       @PickNode="handlePickNode"
       @StopPickNode="handleStopPickNode"
+      @StartMove="handleStartMove"
+      @EndMove="handleEndMove"
     />
   </div>
 </template>
@@ -187,6 +191,10 @@ const handleStartDraw = (geopoint) => {
           coordinates: drawParams.drawTemList
         }
       }
+      if (pickParams.action === 'ADD') {
+        pickParams.geoJSON.features[pickParams.index] = LineString
+        pickParams.nodes = drawParams.drawTemList
+      }
       drawParams.drawJSON.features[drawParams.drawPostion] = LineString
     }
   }
@@ -196,12 +204,18 @@ const handleStartDraw = (geopoint) => {
     if (drawParams.drawTemList.length > 2) {
       const points = turf.featureCollection(drawParams.drawTemList.map((item) => turf.point(item)))
       const Polygon = turf.convex(points)
+      if (pickParams.action === 'ADD') {
+        pickParams.geoJSON.features[pickParams.index] = Polygon
+        const coordinates = Polygon.geometry.coordinates
+        pickParams.nodes = coordinates[0].slice(0, -1)
+      }
       drawParams.drawJSON.features[drawParams.drawPostion] = Polygon
     }
   }
   updateGeoJSON(drawParams.drawJSON, drawParams.drawId, drawParams.drawOption)
 }
 const handleEndDraw = (endAll) => {
+  pickParams.action && (pickParams.action = '')
   emit('drawEnd', drawParams.drawJSON)
   drawParams = {
     isDraw: false,
@@ -227,7 +241,8 @@ let pickParams = {
   type: '',
   geoJSON: {},
   nodes: [],
-  action: ''
+  action: '',
+  pickNodesIndex: ''
 }
 const pickGeoJSON = () => {
   mapboxRef.value.pickGeoJSON()
@@ -248,13 +263,7 @@ const handleStopPickGeoJSON = () => {
   mapboxRef.value.endPickGeoJSON()
   cesiumRef.value.endPickGeoJSON()
 }
-const pickGeoJsonAdd = () => {
-  drawGeoJSON(pickParams.type, pickParams.id, {
-    drawPostion: pickParams.index,
-    drawTemList: pickParams.nodes
-  })
-}
-const pickGeoJsonDel = () => {
+const pickPosition = (type) => {
   let geojson = {
     type: 'FeatureCollection',
     features: []
@@ -273,10 +282,25 @@ const pickGeoJsonDel = () => {
   }))
   mapboxRef.value.pickPosition(geojson)
   cesiumRef.value.pickPosition(geojson)
-  pickParams.action = 'DEL'
+  pickParams.action = type
 }
+const pickGeoJsonAdd = () => {
+  console.log('pickParams', pickParams)
+  pickParams.action = 'ADD'
+  drawGeoJSON(pickParams.type, pickParams.id, {
+    drawPostion: pickParams.index,
+    drawTemList: JSON.parse(JSON.stringify(pickParams.nodes))
+  })
+}
+
+const pickGeoJsonDel = () => pickPosition('DEL')
+
+const pickGeoJsonMov = () => pickPosition('MOV')
+
 const handlePickNode = (payload) => {
   handleStopPickNode()
+  const { sortIndex } = payload
+  pickParams.pickNodesIndex = sortIndex
   if (pickParams.action === 'DEL') {
     if (pickParams.type === 'LineString') {
       if (pickParams.nodes.length > 2) {
@@ -303,6 +327,7 @@ const handlePickNode = (payload) => {
       }
     } else if (pickParams.type === 'Polygon') {
       if (pickParams.nodes.length > 3) {
+        console.log('payload.sortIndex', payload.sortIndex)
         pickParams.nodes.splice(payload.sortIndex, 1)
         const points = turf.featureCollection(pickParams.nodes.map((item) => turf.point(item)))
         const Polygon = turf.convex(points)
@@ -327,21 +352,54 @@ const handlePickNode = (payload) => {
         }
       }
     }
+    pickParams.action = ''
   }
-  pickParams.action = ''
+  if (pickParams.action === 'MOV') {
+    mapboxRef.value.positionMoveStart()
+    cesiumRef.value.positionMoveStart()
+    if (pickParams.type === 'LineString') {
+    }
+    if (pickParams.type === 'Polygon') {
+      const tempList = JSON.parse(JSON.stringify(pickParams.nodes))
+      tempList.splice(pickParams.pickNodesIndex, 1)
+      drawDashPolygon(tempList)
+    }
+  }
 }
 const handleStopPickNode = () => {
   mapboxRef.value.endPickPosition()
   cesiumRef.value.endPickPosition()
 }
+const handleStartMove = (position) => {
+  if (pickParams.type === 'LineString') {
+  }
+  if (pickParams.type === 'Polygon') {
+    pickParams.nodes.splice(pickParams.pickNodesIndex, 1, position)
+    const points = turf.featureCollection(pickParams.nodes.map((item) => turf.point(item)))
+    const Polygon = turf.convex(points)
+    pickParams.geoJSON.features[pickParams.index] = Polygon
+    const coordinates = Polygon.geometry.coordinates
+    pickParams.nodes = coordinates[0].slice(0, -1)
+  }
+  updateGeoJSON(pickParams.geoJSON, pickParams.id)
+}
+const handleEndMove = () => {
+  pickParams.pickPosition = ''
+  pickParams.pickNodesIndex = ''
+  pickParams.action = ''
+  props.currMap === 'mapbox' && cesiumRef.value.drawfigureEnd()
+  props.currMap === 'cesium' && mapboxRef.value.drawfigureEnd()
+}
 const stopEditGeoJSON = () => {
+  if (pickParams.action) handleStopPickNode()
   pickParams = {
     id: '',
     index: '',
     type: '',
     geoJSON: {},
     nodes: [],
-    action: ''
+    action: '',
+    pickNodesIndex: ''
   }
 }
 
@@ -354,6 +412,7 @@ defineExpose({
   pickGeoJSON,
   pickGeoJsonAdd,
   pickGeoJsonDel,
+  pickGeoJsonMov,
   stopEditGeoJSON
 })
 </script>

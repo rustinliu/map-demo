@@ -1,5 +1,11 @@
 <template>
-  <Map :currMap="curr" ref="mapRef" @drawEnd="handlDrawEnd" @pickedData="handlePickedData"></Map>
+  <Map
+    :currMap="curr"
+    ref="mapRef"
+    @drawEnd="handlDrawEnd"
+    @pickedData="handlePickedData"
+    @mapMessage="handleMessage"
+  ></Map>
   <Navbar position="top">
     <el-switch
       style="--el-switch-on-color: #3a94f9; --el-switch-off-color: #21c764"
@@ -57,7 +63,7 @@
     <div v-if="curEditedInfo" style="flex-shrink: 0">{{ curEditedInfo.id }}:</div>
     <el-button v-if="curEditedInfo" type="primary" @click="handlePickGeoJsonAdd">添加节点</el-button>
     <el-button v-if="curEditedInfo" type="primary" @click="handlePickGeoJsonDel">删除节点</el-button>
-    <el-button v-if="curEditedInfo" type="primary">移动节点</el-button>
+    <el-button v-if="curEditedInfo" type="primary" @click="handlePickGeoJsonMov">移动节点</el-button>
     <el-button @click="handleStopEditData" v-if="curEditedInfo" type="danger">退出编辑</el-button>
   </Navbar>
 </template>
@@ -144,6 +150,16 @@ const handlDrawEnd = function (drawJSON) {
   console.log('geoJSON', drawJSON)
 }
 
+const handleMessage = (payLoad) => {
+  const { modules, msg, type } = payLoad
+  ElMessage({
+    type,
+    message: msg,
+    offset: 70,
+    duration: 1500
+  })
+}
+
 const curEditedInfo = ref(null)
 const handlePickedData = function (data) {
   curEditedInfo.value = data
@@ -160,7 +176,9 @@ const handlePickGeoJsonAdd = () => {
 const handlePickGeoJsonDel = () => {
   mapRef.value.pickGeoJsonDel()
 }
-
+const handlePickGeoJsonMov = () => {
+  mapRef.value.pickGeoJsonMov()
+}
 const handleChoseEditData = () => {
   mapRef.value.pickGeoJSON()
 }

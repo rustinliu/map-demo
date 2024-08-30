@@ -237,10 +237,11 @@ class CreateMap {
     this.eventHandleMap.click = confirmPath
     this.eventHandleMap.contextmenu = stopDraw
   }
-  drawfigureStart(type, leftClickCallback, rightClickCallback) {
+  drawfigureStart(type, leftClickCallback, rightClickCallback, once = false) {
     this.instance.getCanvas().style.cursor = 'crosshair'
     this.confirmPath = (e) => {
       leftClickCallback([Number(e.lngLat.lng.toFixed(3).slice(0, -1)), Number(e.lngLat.lat.toFixed(3).slice(0, -1))])
+      once && this.stopDraw()
     }
     this.stopDraw = () => {
       this.drawfigureEnd()

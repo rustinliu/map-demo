@@ -25,7 +25,7 @@ onUnmounted(() => {
 // watchEffect(() => {
 //   mapboxMap && (mapboxMap.instance.getContainer().style.display = props.visible ? 'block' : 'none')
 // })
-const emit = defineEmits(['StartDraw', 'EndDraw', 'PickGeoJSON', 'StopPickGeoJSON', 'PickNode'])
+const emit = defineEmits(['StartDraw', 'EndDraw', 'PickGeoJSON', 'StopPickGeoJSON', 'PickNode', 'StartMove', 'EndMove'])
 
 const addGeojsonToMap = (id, geojson, options) => mapboxMap.addGeojsonToMap(id, geojson, options)
 const modGeojsonInMap = (id, geojson, options) => mapboxMap.modGeojsonInMap(id, geojson, options)
@@ -54,6 +54,13 @@ const pickPosition = (geojson) =>
     () => emit('StopPickNode')
   )
 const endPickPosition = () => mapboxMap.endPickPosition()
+const positionMoveStart = () =>
+  mapboxMap.drawfigureStart(
+    undefined,
+    (geojson) => emit('StartMove', geojson),
+    () => emit('EndMove'),
+    true
+  )
 
 defineExpose({
   instance: toRef(() => mapboxMap.instance),
@@ -68,7 +75,8 @@ defineExpose({
   pickGeoJSON,
   endPickGeoJSON,
   pickPosition,
-  endPickPosition
+  endPickPosition,
+  positionMoveStart
 })
 </script>
 
