@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": "./",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/*"]
     }
   },
-  "include": [
-		"Element-puls.d.ts"
-	],
   "exclude": ["node_modules", "dist"]
 }

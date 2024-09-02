@@ -73,9 +73,9 @@
 import 'element-plus/es/components/message/style/css'
 import { ref } from 'vue'
 
-import samplePoint from '@/map/data/sample-point.json'
-import sampleLine from '@/map/data/sample-line.json'
-import samplePolygon from '@/map/data/sample-polygon.json'
+import samplePoint from '@/components/map/utils/exampleData/sample-point.json'
+import sampleLine from '@/components/map/utils/exampleData/sample-line.json'
+import samplePolygon from '@/components/map/utils/exampleData/sample-polygon.json'
 
 import Map from '@/components/map/index.vue'
 import Navbar from '@/components/navbar.vue'

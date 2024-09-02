@@ -6,6 +6,7 @@
         "type": "Feature",
         "geometry": {
           "type": "Polygon",
+          "properties": {},
           "coordinates": [
             [
               [-91.3952, -0.9145],
@@ -25,6 +26,7 @@
         "type": "Feature",
         "geometry": {
           "type": "Polygon",
+          "properties": {},
           "coordinates": [
             [
               [-90.3952, -0.9145],

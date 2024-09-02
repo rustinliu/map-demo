@@ -3,9 +3,9 @@
 </template>
 
 <script setup>
-import CreateCesium from '@/map/cesium'
-
 import { onMounted, onUnmounted, ref, toRef, watchEffect } from 'vue'
+
+import CreateCesium from '../utils/cesium'
 
 const props = defineProps({
   visible: {

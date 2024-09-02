@@ -9,18 +9,7 @@ const router = createRouter({
     {
       path: '/map',
       name: 'map',
-      // component: () => import('../views/MapView.vue')
       component: () => import('../views/MapView2.vue')
-    },
-    {
-      path: '/mapbox',
-      name: 'mapbox',
-      component: () => import('../views/MapboxView.vue')
-    },
-    {
-      path: '/cesium',
-      name: 'cesium',
-      component: () => import('../views/CesiumView.vue')
     }
   ]
 })

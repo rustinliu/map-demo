@@ -33,7 +33,7 @@ import * as turf from '@turf/turf'
 import MapboxMap from './components/MapboxMap.vue'
 import CesiumMap from './components/CesiumMap.vue'
 
-import { mapboxToCesium, cesiumTomapbox } from '@/map/utils/transForm.js'
+import { mapboxToCesium, cesiumTomapbox } from './utils/transForm.js'
 import { mapboxOptions, cesiumOptions } from './options.js'
 
 const mapboxRef = ref(null)
@@ -81,6 +81,7 @@ const addGeoJSON = (geoJSON, id, options = {}) => {
   let createId = id || type
   if (geoJSON && geoJSON.features && geoJSON.features.length) {
     geoJSON.features.forEach((item, index) => {
+      item.properties = item.properties || {}
       item.properties.sortIndex = index
       item.properties.id = createId
     })
@@ -101,6 +102,7 @@ const updateGeoJSON = (geoJSON, id, options = {}) => {
   let updateId = id || type
   if (geoJSON && geoJSON.features && geoJSON.features.length) {
     geoJSON.features.forEach((item, index) => {
+      item.properties = item.properties || {}
       item.properties.sortIndex = index
       item.properties.id = updateId
     })

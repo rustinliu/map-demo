@@ -4,8 +4,9 @@
 
 <script setup>
 import { onMounted, onUnmounted, ref, toRef, watchEffect } from 'vue'
+
 import '/node_modules/mapbox-gl/dist/mapbox-gl.css'
-import CreateMapBox from '@/map/mapbox'
+import CreateMapBox from '../utils/mapbox'
 
 const props = defineProps({
   visible: {
